@@ -1,3 +1,5 @@
+import os
+
 from dexter.config.constants import Split
 from dexter.data.loaders.RetrieverDataset import RetrieverDataset
 from dexter.utils.metrics.SimilarityMatch import CosineSimilarity
@@ -11,28 +13,30 @@ if __name__ == "__main__":
     # ambignq = '<path to the data file>
     # ambignq-corpus = '<path to the corpus file>'
     # You can set the split to one of Split.DEV, Split.TEST or Split.TRAIN
-    # Setting tokenizer=None only loads only the raw data processed into our standard data classes, if tokenizer is set, the data is also tokenized and stored in the loader.
-    loader = RetrieverDataset("wikimultihopqa","corpus",
-                               "config.ini", Split.DEV,tokenizer=None)
+    # Setting tokenizer=None only loads the raw data processed into our standard data classes, if tokenizer is set,
+    # the data is also tokenized and stored in the loader.
+    config_path = os.getcwd() + '/data/config.json'
+    print(config_path)
+    loader = RetrieverDataset("wikimultihopqa", "corpus",
+                              config_path, Split.DEV, tokenizer=None)
 
     # Initialize your retriever configuration
     config_instance = DenseHyperParams(query_encoder_path="facebook/contriever",
-                                     document_encoder_path="facebook/contriever"
-                                     ,batch_size=32,show_progress_bar=True)
+                                       document_encoder_path="facebook/contriever",
+                                       batch_size=32, show_progress_bar=True)
 
     # From data loader loads list of queries, corpus and relevance labels.
     queries, qrels, corpus = loader.qrels()
-    
+
     print("FIRST QUERY")
     print(queries[0].id())
     print(queries[0].text())
 
-    #Perform Retrieval
-    contrvr_search = Contriever(config_instance)   
+    # Perform Retrieval
+    contrvr_search = Contriever(config_instance)
     similarity_measure = CosineSimilarity()
-    response = contrvr_search.retrieve(corpus,queries,100,similarity_measure,chunk=True,chunksize=400000)
-
+    response = contrvr_search.retrieve(corpus, queries, 100, similarity_measure, chunk=True, chunksize=400000)
 
     #Evaluate retrieval metrics
-    metrics = RetrievalMetrics(k_values=[1,10,100])
-    print(metrics.evaluate_retrieval(qrels=qrels,results=response))
+    metrics = RetrievalMetrics(k_values=[1, 10, 100])
+    print(metrics.evaluate_retrieval(qrels=qrels, results=response))
