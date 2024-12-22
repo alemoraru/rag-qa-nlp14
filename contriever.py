@@ -8,6 +8,7 @@ from dexter.data.datastructures.hyperparameters.dpr import DenseHyperParams
 from dexter.retriever.dense.Contriever import Contriever
 
 if __name__ == "__main__":
+    print(f'Is CUDA enabled: {torch.cuda.is_available()}')
     print(type(Contriever))
     # Ensure in config.ini the path to the raw data files are linked under [Data-Path]
     # ambignq = '<path to the data file>
