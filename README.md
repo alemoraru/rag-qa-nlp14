@@ -13,4 +13,4 @@ The compiler can be downloaded from [here](https://www.rust-lang.org/).
 
 Create a folder called "data" and include `wiki_musique_corpus.json` there. Then, in `data` folder, create a new folder 
 `dataset` and add the `dev.json`, `train.json` and `test.json` files. The retriever will pick up the data files from 
-`config.ini`.
+`config.ini`. The data can be downloaded from [here](https://drive.google.com/drive/folders/1aQAfNLq6HB0w4_fVnKMBvKA6cXJGRTpH).
