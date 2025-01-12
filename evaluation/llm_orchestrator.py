@@ -103,9 +103,10 @@ class EvalPipeline:
     def set_golden_eval(self, golden: bool):
         self.golden_eval = golden
 
-    def evaluate_queries(self, queries: list[Query]):
+    def evaluate_queries(self, queries: list[Query], k=1):
         """
         For each query, the LLM is called to answer the query's prompt.
+        The K parameters retrieves top K golden docs if golden_eval=True.
         """
 
         prompt_type = "document"
@@ -113,17 +114,17 @@ class EvalPipeline:
             prompt_type = "context"
 
         for query in queries:
-            prompt, documents = self.create_prompt(query, prompt_type)
+            prompt, documents = self.create_prompt(query, prompt_type, k)
             llm_answer = self.llm_instance.get_llama_completion(
                 user_prompt=prompt, documents=documents
             )
-            # print(f"Answer {llm_answer}")
+            #print(f"Answer {self.extract_correct_answer(llm_answer)}")
             query.set_result(self.extract_correct_answer(llm_answer))
 
         return queries
 
     @staticmethod
-    def create_prompt(query: Query, prompt_type="document"):
+    def create_prompt(query: Query, prompt_type="document", k=1):
         """
         Create a prompt to the query contains either the context (gold docs) of the query (prompt_type=context)
         or the ones retrieved (prompt_type = document).
@@ -133,7 +134,7 @@ class EvalPipeline:
         if prompt_type == "document":
             context = query.documents_to_dict()
         else:
-            context = query.context_to_dict()
+            context = query.context_to_dict(k)
 
         return query.question, context
 
@@ -174,20 +175,21 @@ def perform_evaluation(
 
     # Retrieve the sampling docs
     if sampling_method == SamplingMethod.GOLDEN:
-        sampling_docs = retrieve_sampling(
-            file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
-        )
         eval_pipeline.set_golden_eval(golden=True)
-    else:
-        sampling_docs = retrieve_sampling(
-            file="responseDict", sampling=sampling_method, k=k
-        )
+  
+    sampling_docs = retrieve_sampling(
+        file="responseDict", sampling=sampling_method, k=k
+    )
 
-    logging.info("Aggregating data...")
-    queries = aggregate_data(sampling_docs)
+    queries = []
+    if sampling_method != SamplingMethod.GOLDEN:
+        logging.info("Aggregating data...")
+        queries = aggregate_data(sampling_docs)
+    else:
+        queries = sampling_docs # use already processed queries
 
     logging.info("Starting the query evaluation with LLAMA...")
-    answers = eval_pipeline.evaluate_queries(queries)
+    answers = eval_pipeline.evaluate_queries(queries, k)
 
     logging.info("Getting the results...")
     correct_answers_exact_match = 0
@@ -230,6 +232,8 @@ def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
         return sampling_generator.negative_sampling(k)
     if sampling == SamplingMethod.RANDOM:
         return sampling_generator.random_sampling(k)
+    if sampling == SamplingMethod.GOLDEN:
+        return sampling_generator.golden_context_sampling()
 
     raise Exception(
         "Provide one of the following supported sampling types: relevant, negative or random."
@@ -305,10 +309,10 @@ if __name__ == "__main__":
     # Uncomment any of the lines below for evaluation using different settings
 
     # Eval golden docs top 1
-    # perform_evaluation(sampling_method=SamplingMethod.GOLDEN)
+    perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=3)
 
     # #Eval relevant docs only top 1
-    perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
+    #perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
     # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5

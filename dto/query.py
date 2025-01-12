@@ -67,15 +67,15 @@ class Query:
         """Method to set the result of the LLM to the query object."""
         self.result = result
 
-    def context_to_dict(self):
+    def context_to_dict(self, k):
         """
         Method to convert the list of provided contexts to a list of dictionaries,
         wherein each dictionary contains the name and text of the query context.
-        :return: List of dictionaries containing the name and text of the query context.
+        :return: List of dictionaries containing the name and text of the top K query documents.
         """
 
         result = []
-        for c in self.query_context:
+        for c in self.query_context[:k]:
             result.append({"title": c.name, "text": "".join(c.context)})
         return result
 

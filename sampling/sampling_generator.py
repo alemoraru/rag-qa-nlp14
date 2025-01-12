@@ -1,4 +1,10 @@
 import random
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from dto.query import QueryContext, Query
+import numpy as np
+import os
+import json
 
 
 class SamplingGenerator:
@@ -77,3 +83,48 @@ class SamplingGenerator:
             result_dict[query_id] = top_k + random_docs
 
         return result_dict
+    
+
+    def golden_context_sampling(self):
+        """
+        Perfom top K retrieval of golden documents for each query
+        based on the embeddings cosine similarity between a query and the document
+        """
+        max_k = 5
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, "../data/dataset/dev.json")
+        file_path = os.path.abspath(file_path)
+
+        with open(file_path, "r") as file:
+            queries = json.load(file)
+
+        queries_with_k_context = []
+        model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')              
+
+        for sub_json in queries[:10]:
+            context = sub_json.get("context")
+            question = sub_json.get("question")
+            query_contexts = [
+                QueryContext(name=item[0], context=item[1])
+                for item in context
+            ]
+
+            document_texts = [f"{doc.name} {doc.context}" for doc in query_contexts]        
+            query_embedding = model.encode(question, convert_to_tensor=False)
+            document_embeddings = model.encode(document_texts, convert_to_tensor=False)
+
+            # Compute cosine similarity between the query and each document
+            similarity_scores = cosine_similarity([query_embedding], document_embeddings)[0]
+ 
+            top_k_indices = np.argsort(similarity_scores)[::-1][:max_k]
+            top_k_documents = [query_contexts[i] for i in top_k_indices]
+        
+            queries_with_k_context.append(Query(
+                sub_json.get("_id"),
+                sub_json.get("answer"),
+                sub_json.get("type"),
+                question,
+                top_k_documents,
+            ))
+
+        return queries_with_k_context
