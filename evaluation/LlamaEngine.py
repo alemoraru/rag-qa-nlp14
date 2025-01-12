@@ -1,5 +1,3 @@
-import torch
-import transformers
 import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import login
@@ -10,7 +8,8 @@ login(token=access_token_read)
 
 class LlamaEngine:
 
-    def __init__(self, data, model_name="meta-llama/Llama-2-7b-chat-hf", temperature=0.3, top_n=1, max_new_tokens=15):
+    def __init__(self, data, model_name="meta-llama/Llama-3.2-1B-Instruct", temperature=0.3, top_n=1,
+                 max_new_tokens=15):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.temperature = temperature
@@ -19,10 +18,11 @@ class LlamaEngine:
         self.max_new_tokens = max_new_tokens
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
 
-    def format_prompt(self, query, documents):
+    @staticmethod
+    def format_prompt(query, documents):
         """
         Formats the input prompt for a retrieval-augmented generation (RAG) pipeline.
-        
+
         Args:
             documents (list): List of dictionaries with 'title' and 'text' as keys.
             query (str): User's query.

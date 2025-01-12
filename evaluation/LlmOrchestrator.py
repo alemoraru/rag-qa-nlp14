@@ -1,6 +1,6 @@
-from dexter.llms.llm_engine_orchestrator import LLMEngineOrchestrator
 import json
 from sampling.SamplingGenerator import SamplingGenerator
+from evaluation.LlamaEngine import LlamaEngine
 from dto.Query import Query
 from dto.Query import QueryContext
 from dto.Query import Document
@@ -11,16 +11,16 @@ import os
 class EvalPipeline:
     def __init__(self, model="llama", golden_evaluation=False):
         self.golden_eval = golden_evaluation
-        self.llm_instance = LLMEngineOrchestrator.get_llm_engine(llm_class="llama", data="",
-                                                                 model_name="meta-llama/Llama-3.2-1B-Instruct")  # add model_name="meta-llama/Llama-2-7b-chat-hf", temperature=0.3, top_n=1, top_p=None
+        self.llm_instance = LlamaEngine(data="", model_name="meta-llama/Llama-3.2-1B-Instruct")
 
     def set_golden_eval(self, golden: bool):
         self.golden_eval = golden
 
     def evaluate_queries(self, queries: list[Query]):
         """
-        For each query, the llm is called to answer the query's prompt.
+        For each query, the LLM is called to answer the query's prompt.
         """
+
         prompt_type = "document"
         if self.golden_eval:
             prompt_type = "context"
@@ -34,11 +34,13 @@ class EvalPipeline:
 
         return queries
 
-    def create_prompt(self, query: Query, prompt_type="document"):
+    @staticmethod
+    def create_prompt(query: Query, prompt_type="document"):
         """
         Create a prompt to the query contains either the context (gold docs) of the query (prompt_type=context)
         or the ones retrieved (promt_type = document).
         """
+
         context = []
         if prompt_type == "document":
             context = query.documents_to_dict()
@@ -47,21 +49,24 @@ class EvalPipeline:
 
         return query.question, context
 
-    def extract_correct_answer(self, output):
+    @staticmethod
+    def extract_correct_answer(output):
         # Extract the response after "Assistant:"
         assistant_response = output.split("Answer: ")[-1].strip()
 
         return assistant_response
 
-    def assess_result(self, query: Query):
+    @staticmethod
+    def assess_result(query: Query):
         """
         Compare the actual vs the llm-based answer of the query based on Exact Match on words.
         """
+
         return 1 if query.answer.lower() in query.result.lower() else 0
 
 
 def perform_evaluation(sampling, k=1):
-    sampling_docs = retrieveSampling(file="responseDict", sampling="negative", k=k)
+    sampling_docs = retrieve_sampling(file="responseDict", sampling="negative", k=k)
 
     with open("samplingOut", "w") as file:
         json.dump(sampling_docs, file)
@@ -69,23 +74,23 @@ def perform_evaluation(sampling, k=1):
     queries = aggregate_data(sampling_docs)
 
     print("Starting the query evaluation with LLAMA")
-    evalPipeline = EvalPipeline(model="llama")
+    eval_pipeline = EvalPipeline(model="llama")
 
     if sampling == "golden":
         print("Serving golden docs")
-        evalPipeline.set_golden_eval(golden=True)
+        eval_pipeline.set_golden_eval(golden=True)
 
-    answers = evalPipeline.evaluate_queries(queries[:2])
+    answers = eval_pipeline.evaluate_queries(queries[:2])
     print("Evaluating the results")
     correct_answers = 0
     for query in answers:
-        correct_answers += evalPipeline.assess_result(query)
+        correct_answers += eval_pipeline.assess_result(query)
 
     print(
         f"Sampling on {sampling} with k {k} with result: correct answers {correct_answers} out of total {len(answers)} -> {correct_answers / len(answers)}")
 
 
-def retrieveSampling(file="responseDict", sampling="relevant", k=1):
+def retrieve_sampling(file="responseDict", sampling="relevant", k=1):
     """
     Select top k docs from the retrieved ones.
     The sampling can contain either: 
@@ -93,17 +98,18 @@ def retrieveSampling(file="responseDict", sampling="relevant", k=1):
         - relevant and negative with ratio k:2
         - relevant and random with ratio k:2
     """
+
     with open(f"{file}.json", "r") as file:
         response_dict = json.load(file)
 
-    samplingGenerator = SamplingGenerator(response_dict)
+    sampling_generator = SamplingGenerator(response_dict)
 
     if sampling == "relevant":
-        return samplingGenerator.relevant_sampling(k)
+        return sampling_generator.relevant_sampling(k)
     elif sampling == "negative":
-        return samplingGenerator.negative_sampling(k)
+        return sampling_generator.negative_sampling(k)
     elif sampling == "random":
-        return samplingGenerator.random_sampling(k)
+        return sampling_generator.random_sampling(k)
     else:
         return Exception("Provide one of the following supported sampling types: relevant, negative or random.")
 
