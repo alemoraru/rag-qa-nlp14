@@ -22,7 +22,7 @@ class SamplingGenerator:
             sorted_top_docs = dict(
                 sorted(top_docs.items(), key=lambda item: item[1], reverse=True)
             )
-            result_dict[query_id] = dict(list(sorted_top_docs.items())[:k])
+            result_dict[query_id] = list(sorted_top_docs.items())[:k]
 
         return result_dict
 

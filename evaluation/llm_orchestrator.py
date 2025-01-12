@@ -305,17 +305,17 @@ if __name__ == "__main__":
     # Uncomment any of the lines below for evaluation using different settings
 
     # Eval golden docs top 1
-    # perform_evaluation(sampling=SamplingMethod.GOLDEN)
+    # perform_evaluation(sampling_method=SamplingMethod.GOLDEN)
 
     # #Eval relevant docs only top 1
-    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=1)
+    perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
-    perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
+    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5
-    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=5)
+    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=5)
 
     # #Eval negative docs with top 5 relevant, ratio 5:2
     # perform_evaluation(sampling=SamplingMethod.NEGATIVE, k=5)
 
     # #Eval random docs with top 5 relevant, ratio 5:2
-    # perform_evaluation(sampling=SamplingMethod.RANDOM, k=5)
+    # perform_evaluation(sampling_method=SamplingMethod.RANDOM, k=5)
