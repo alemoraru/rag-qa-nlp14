@@ -35,7 +35,9 @@ class Query:
     A query contains its unique ID, (gold) answer, type, question, as well as a list of documents and contexts.
     """
 
-    def __init__(self, query_id: str, answer: str, type: str, question: str, contexts=None):
+    def __init__(
+        self, query_id: str, answer: str, type: str, question: str, contexts=None
+    ):
         if contexts is None:
             contexts = []
         self.query_id = query_id
@@ -71,5 +73,7 @@ class Query:
 
     def print_obj(self):
         """Method to print the object."""
-        print(f"Query(query_id={self.query_id}, answer={self.answer}, "
-              f"type={self.type}, query={self.question}, context={self.query_context}, documents={self.documents})")
+        print(
+            f"Query(query_id={self.query_id}, answer={self.answer}, "
+            f"type={self.type}, query={self.question}, context={self.query_context}, documents={self.documents})"
+        )

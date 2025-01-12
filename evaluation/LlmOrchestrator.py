@@ -10,7 +10,9 @@ from sampling.SamplingGenerator import SamplingGenerator
 class EvalPipeline:
     def __init__(self, model="llama", golden_evaluation=False):
         self.golden_eval = golden_evaluation
-        self.llm_instance = LlamaEngine(data="", model_name="meta-llama/Llama-3.2-1B-Instruct")
+        self.llm_instance = LlamaEngine(
+            data="", model_name="meta-llama/Llama-3.2-1B-Instruct"
+        )
 
     def set_golden_eval(self, golden: bool):
         self.golden_eval = golden
@@ -26,7 +28,9 @@ class EvalPipeline:
 
         for query in queries:
             prompt, documents = self.create_prompt(query, prompt_type)
-            llm_answer = self.llm_instance.get_llama_completion(user_prompt=prompt, documents=documents)
+            llm_answer = self.llm_instance.get_llama_completion(
+                user_prompt=prompt, documents=documents
+            )
             # print(llm_answer)
             print(f"Answer {llm_answer}")
             query.add_result(self.extract_correct_answer(llm_answer))
@@ -86,13 +90,14 @@ def perform_evaluation(sampling, k=1):
         correct_answers += eval_pipeline.assess_result(query)
 
     print(
-        f"Sampling on {sampling} with k {k} with result: correct answers {correct_answers} out of total {len(answers)} -> {correct_answers / len(answers)}")
+        f"Sampling on {sampling} with k {k} with result: correct answers {correct_answers} out of total {len(answers)} -> {correct_answers / len(answers)}"
+    )
 
 
 def retrieve_sampling(file="responseDict", sampling="relevant", k=1):
     """
     Select top k docs from the retrieved ones.
-    The sampling can contain either: 
+    The sampling can contain either:
         - relevant k documents only
         - relevant and negative with ratio k:2
         - relevant and random with ratio k:2
@@ -110,12 +115,14 @@ def retrieve_sampling(file="responseDict", sampling="relevant", k=1):
     elif sampling == "random":
         return sampling_generator.random_sampling(k)
     else:
-        return Exception("Provide one of the following supported sampling types: relevant, negative or random.")
+        raise Exception(
+            "Provide one of the following supported sampling types: relevant, negative or random."
+        )
 
 
 def aggregate_data(response_dict):
     """
-    Aggregate the retrievers response with the datasets 
+    Aggregate the retrievers response with the datasets
     and create dto classes of type Query that represents a query
     """
 
@@ -149,8 +156,17 @@ def find_query_by_id(data, query_id: str):
     """
     for subjson in data:
         if subjson.get("_id") == query_id:
-            query_contexts = [QueryContext(name=item[0], context=item[1]) for item in subjson.get("context")]
-            return Query(query_id, subjson.get("answer"), subjson.get("type"), subjson.get("question"), query_contexts)
+            query_contexts = [
+                QueryContext(name=item[0], context=item[1])
+                for item in subjson.get("context")
+            ]
+            return Query(
+                query_id,
+                subjson.get("answer"),
+                subjson.get("type"),
+                subjson.get("question"),
+                query_contexts,
+            )
 
     print(f"Found zero matching query with id: {query_id}")
     return None

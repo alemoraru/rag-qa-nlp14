@@ -21,7 +21,9 @@ class SamplingGenerator:
         result_dict = {}
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
-            sorted_top_docs = dict(sorted(top_docs.items(), key=lambda item: item[1], reverse=True))
+            sorted_top_docs = dict(
+                sorted(top_docs.items(), key=lambda item: item[1], reverse=True)
+            )
 
             # Get the first k and the last n negative docs
             top_k = list(sorted_top_docs.items())[:k]
@@ -31,7 +33,7 @@ class SamplingGenerator:
 
     def random_sampling(self, k, random_amount=2):
         """
-        Perform random sampling from the response dictionary 
+        Perform random sampling from the response dictionary
         and append the random docs with the top k relevant docs.
         :param k: number of relevant docs
         :param random_amount: number of random docs to be sampled
@@ -41,7 +43,9 @@ class SamplingGenerator:
         result_dict = {}
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
-            sorted_top_docs = dict(sorted(top_docs.items(), key=lambda item: item[1], reverse=True))
+            sorted_top_docs = dict(
+                sorted(top_docs.items(), key=lambda item: item[1], reverse=True)
+            )
 
             # Get the first k docs
             top_k = list(sorted_top_docs.items())[:k]
@@ -50,7 +54,9 @@ class SamplingGenerator:
             remaining_docs = list(sorted_top_docs.items())[k:]
 
             # Get random docs from the remaining docs
-            random_docs = random.sample(remaining_docs, min(random_amount, len(remaining_docs)))
+            random_docs = random.sample(
+                remaining_docs, min(random_amount, len(remaining_docs))
+            )
             result_dict[query_id] = top_k + random_docs
 
         return result_dict
@@ -65,7 +71,9 @@ class SamplingGenerator:
         result_dict = {}
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
-            sorted_top_docs = dict(sorted(top_docs.items(), key=lambda item: item[1], reverse=True))
+            sorted_top_docs = dict(
+                sorted(top_docs.items(), key=lambda item: item[1], reverse=True)
+            )
             result_dict[query_id] = dict(list(sorted_top_docs.items())[:k])
 
         return result_dict

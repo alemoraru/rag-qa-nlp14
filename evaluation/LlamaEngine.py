@@ -9,8 +9,14 @@ login(token=access_token_read)
 
 class LlamaEngine:
 
-    def __init__(self, data, model_name="meta-llama/Llama-3.2-1B-Instruct", temperature=0.3, top_n=1,
-                 max_new_tokens=15):
+    def __init__(
+        self,
+        data,
+        model_name="meta-llama/Llama-3.2-1B-Instruct",
+        temperature=0.3,
+        top_n=1,
+        max_new_tokens=15,
+    ):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.temperature = temperature
@@ -31,7 +37,9 @@ class LlamaEngine:
         Returns:
             str: Formatted prompt for the chat template.
         """
-        concatenated_string = "\n".join(f"Title: {doc['title']}\nContent: {doc['text']}" for doc in documents)
+        concatenated_string = "\n".join(
+            f"Title: {doc['title']}\nContent: {doc['text']}" for doc in documents
+        )
 
         prompt = (
             "<|begin_of_text|>\n"
@@ -45,7 +53,9 @@ class LlamaEngine:
 
     def get_llama_completion(self, user_prompt: str, documents):
         conversation = self.format_prompt(user_prompt, documents)
-        inputs = self.tokenizer(conversation, return_tensors="pt", truncation=False, max_length=131072)
+        inputs = self.tokenizer(
+            conversation, return_tensors="pt", truncation=False, max_length=131072
+        )
 
         output = self.model.generate(
             input_ids=inputs["input_ids"],
