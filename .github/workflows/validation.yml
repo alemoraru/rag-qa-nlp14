@@ -9,7 +9,7 @@ on:
 jobs:
   code-quality-validation:
     name: Code Quality Validation
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -19,7 +19,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10
+          python-version: 3.10.4
 
       - name: Install dependencies
         run: |
