@@ -1,26 +1,42 @@
-import torch
-import transformers
 import os
-from transformers import AutoModelForCausalLM, AutoTokenizer
+
 from huggingface_hub import login
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
 access_token_read = os.environ["huggingface_token"]
-login(token = access_token_read)
+login(token=access_token_read)
+
 
 class LlamaEngine:
+    """
+    Wrapper class for using LLAMA models to generate responses to user queries.
+    Currently, the model name is hard-coded to "meta-llama/Llama-3.2-1B-Instruct",
+    since our evaluation is focused on this model. Technically, this can be changed
+    to other models, as long as they are available on the Hugging Face model hub and
+    the used token is authorized to access them.
+    """
 
-    def __init__(self, data, model_name="meta-llama/Llama-2-7b-chat-hf", temperature=0.3, top_n=1, max_new_tokens=15):
+    def __init__(
+        self,
+        data,
+        model_name="meta-llama/Llama-3.2-1B-Instruct",
+        temperature=0.3,
+        top_n=1,
+        max_new_tokens=15,
+    ):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.temperature = temperature
         self.data = data
         self.top_n = top_n
-        self.max_new_tokens=max_new_tokens
+        self.max_new_tokens = max_new_tokens
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
 
-    def format_prompt(self, query, documents):
+    @staticmethod
+    def format_prompt(query, documents):
         """
         Formats the input prompt for a retrieval-augmented generation (RAG) pipeline.
-        
+
         Args:
             documents (list): List of dictionaries with 'title' and 'text' as keys.
             query (str): User's query.
@@ -28,7 +44,9 @@ class LlamaEngine:
         Returns:
             str: Formatted prompt for the chat template.
         """
-        concatenated_string = "\n".join(f"Title: {doc['title']}\nContent: {doc['text']}" for doc in documents)
+        concatenated_string = "\n".join(
+            f"Title: {doc['title']}\nContent: {doc['text']}" for doc in documents
+        )
 
         prompt = (
             "<|begin_of_text|>\n"
@@ -41,18 +59,25 @@ class LlamaEngine:
         return prompt
 
     def get_llama_completion(self, user_prompt: str, documents):
+        """
+        Generates a response to a user prompt given some documents using the set LLAMA model.
+        :param user_prompt: the user's query
+        :param documents: the documents to be used for the response generation
+        :return: the generated response
+        """
         conversation = self.format_prompt(user_prompt, documents)
-        inputs = self.tokenizer(conversation, return_tensors="pt", truncation=False, max_length=131072)
+        inputs = self.tokenizer(
+            conversation, return_tensors="pt", truncation=False, max_length=131072
+        )
 
         output = self.model.generate(
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
-            max_new_tokens=1000, 
+            max_new_tokens=1000,
             temperature=0.3,
             top_p=0.9,
-        )   
+        )
 
         # Decode the response
         response = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return response
-        
