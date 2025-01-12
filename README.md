@@ -54,7 +54,7 @@ Master's course at TU Delft.
 
 - Execute the following command to run the project:
     ```sh
-    python3 -m evaluation.LlmOrchestrator
+    python3 -m evaluation.llm_orchestrator
     ```
 
 ## Known Issues 🐛

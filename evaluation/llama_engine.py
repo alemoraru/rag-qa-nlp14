@@ -8,6 +8,13 @@ login(token=access_token_read)
 
 
 class LlamaEngine:
+    """
+    Wrapper class for using LLAMA models to generate responses to user queries.
+    Currently, the model name is hard-coded to "meta-llama/Llama-3.2-1B-Instruct",
+    since our evaluation is focused on this model. Technically, this can be changed
+    to other models, as long as they are available on the Hugging Face model hub and
+    the used token is authorized to access them.
+    """
 
     def __init__(
         self,
@@ -52,6 +59,12 @@ class LlamaEngine:
         return prompt
 
     def get_llama_completion(self, user_prompt: str, documents):
+        """
+        Generates a response to a user prompt given some documents using the set LLAMA model.
+        :param user_prompt: the user's query
+        :param documents: the documents to be used for the response generation
+        :return: the generated response
+        """
         conversation = self.format_prompt(user_prompt, documents)
         inputs = self.tokenizer(
             conversation, return_tensors="pt", truncation=False, max_length=131072

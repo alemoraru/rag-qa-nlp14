@@ -1,13 +1,27 @@
 import json
 import os
+from enum import Enum
 
-from dto.Query import Document, Query, QueryContext
-from evaluation.LlamaEngine import LlamaEngine
-from sampling.SamplingGenerator import SamplingGenerator
+from dto.query import Document, Query, QueryContext
+from evaluation.llama_engine import LlamaEngine
+from sampling.sampling_generator import SamplingGenerator
 
 
-# available models: openai, llama, flant5, mistral
+class SamplingMethod(Enum):
+    """Enumeration for available sampling methods."""
+
+    GOLDEN = "golden"
+    RELEVANT = "relevant"
+    NEGATIVE = "negative"
+    RANDOM = "random"
+
+
 class EvalPipeline:
+    """
+    Evaluation pipeline for the LLM model in the context of RAG for QA.
+    Available models: openai, llama, flant5, mistral
+    """
+
     def __init__(self, model="llama", golden_evaluation=False):
         self.golden_eval = golden_evaluation
         self.llm_instance = LlamaEngine(
@@ -33,7 +47,7 @@ class EvalPipeline:
             )
             # print(llm_answer)
             print(f"Answer {llm_answer}")
-            query.add_result(self.extract_correct_answer(llm_answer))
+            query.set_result(self.extract_correct_answer(llm_answer))
 
         return queries
 
@@ -69,7 +83,9 @@ class EvalPipeline:
 
 
 def perform_evaluation(sampling, k=1):
-    sampling_docs = retrieve_sampling(file="responseDict", sampling="negative", k=k)
+    sampling_docs = retrieve_sampling(
+        file="responseDict", sampling=SamplingMethod.NEGATIVE, k=k
+    )
 
     with open("samplingOut", "w") as file:
         json.dump(sampling_docs, file)
@@ -79,7 +95,7 @@ def perform_evaluation(sampling, k=1):
     print("Starting the query evaluation with LLAMA")
     eval_pipeline = EvalPipeline(model="llama")
 
-    if sampling == "golden":
+    if sampling == SamplingMethod.GOLDEN:
         print("Serving golden docs")
         eval_pipeline.set_golden_eval(golden=True)
 
@@ -94,7 +110,7 @@ def perform_evaluation(sampling, k=1):
     )
 
 
-def retrieve_sampling(file="responseDict", sampling="relevant", k=1):
+def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1):
     """
     Select top k docs from the retrieved ones.
     The sampling can contain either:
@@ -108,16 +124,16 @@ def retrieve_sampling(file="responseDict", sampling="relevant", k=1):
 
     sampling_generator = SamplingGenerator(response_dict)
 
-    if sampling == "relevant":
+    if sampling == SamplingMethod.RELEVANT:
         return sampling_generator.relevant_sampling(k)
-    elif sampling == "negative":
+    if sampling == SamplingMethod.NEGATIVE:
         return sampling_generator.negative_sampling(k)
-    elif sampling == "random":
+    if sampling == SamplingMethod.RANDOM:
         return sampling_generator.random_sampling(k)
-    else:
-        raise Exception(
-            "Provide one of the following supported sampling types: relevant, negative or random."
-        )
+
+    raise Exception(
+        "Provide one of the following supported sampling types: relevant, negative or random."
+    )
 
 
 def aggregate_data(response_dict):
@@ -186,18 +202,19 @@ def find_document_by_id(data, doc_id: str):
 
 if __name__ == "__main__":
     print("-----Starting golden eval-----")
+
     # Eval golden docs
-    perform_evaluation(sampling="golden")
+    perform_evaluation(sampling=SamplingMethod.GOLDEN)
 
     # #Eval relevant docs only top 1
-    # perform_evaluation(sampling = "relevant", k = 1)
+    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
-    # perform_evaluation(sampling = "relevant", k = 3)
+    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5
-    # perform_evaluation(sampling = "relevant", k = 5)
+    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=5)
 
     # #Eval negative docs with top 5 relevant, ratio 5:2
-    # perform_evaluation(sampling = "negative", k = 5)
+    # perform_evaluation(sampling=SamplingMethod.NEGATIVE, k=5)
 
     # #Eval random docs with top 5 relevant, ratio 5:2
-    # perform_evaluation(sampling = "random", k = 5)
+    # perform_evaluation(sampling=SamplingMethod.RANDOM, k=5)
