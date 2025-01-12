@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from enum import Enum
 
 from dto.query import Document, Query, QueryContext
@@ -116,8 +117,7 @@ class EvalPipeline:
             llm_answer = self.llm_instance.get_llama_completion(
                 user_prompt=prompt, documents=documents
             )
-            # print(llm_answer)
-            print(f"Answer {llm_answer}")
+            # print(f"Answer {llm_answer}")
             query.set_result(self.extract_correct_answer(llm_answer))
 
         return queries
@@ -168,6 +168,7 @@ def perform_evaluation(
     :return: None
     """
 
+    start_time = time.time()
     logging.info(f"Starting evaluation with: {sampling} and K={k}")
 
     # Retrieve the documents using negative sampling
@@ -189,7 +190,7 @@ def perform_evaluation(
         logging.info("Serving golden docs!")
         eval_pipeline.set_golden_eval(golden=True)
 
-    answers = eval_pipeline.evaluate_queries(queries[:5])
+    answers = eval_pipeline.evaluate_queries(queries)
     logging.info("Getting the results...")
 
     correct_answers_exact_match = 0
@@ -204,9 +205,12 @@ def perform_evaluation(
 
     logging.info(
         f"Sampling with {sampling} with K={k} gives results:\n"
-        f"\tcorrect answers (exact match): {correct_answers_exact_match} -> {correct_answers_exact_match} out of {num_answers} = {correct_answers_exact_match/num_answers}\n"
-        f"\tcorrect answers (F1 score): {correct_answers_f1_score} -> {correct_answers_f1_score} out of {num_answers} = {correct_answers_f1_score/num_answers}"
+        f"\tcorrect answers (EM): {correct_answers_exact_match} -> {correct_answers_exact_match} out of {num_answers} = {correct_answers_exact_match/num_answers}\n"
+        f"\tcorrect answers (F1): {correct_answers_f1_score} -> {correct_answers_f1_score} out of {num_answers} = {correct_answers_f1_score/num_answers}"
     )
+
+    end_time = time.time()
+    logging.info(f"Execution time: {end_time - start_time} seconds")
 
 
 def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1):
@@ -301,12 +305,13 @@ def find_document_by_id(data, doc_id: str):
 
 
 if __name__ == "__main__":
+    # Uncomment any of the lines below for evaluation using different settings
 
     # Eval golden docs top 1
-    perform_evaluation(sampling=SamplingMethod.GOLDEN)
+    # perform_evaluation(sampling=SamplingMethod.GOLDEN)
 
     # #Eval relevant docs only top 1
-    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=1)
+    perform_evaluation(sampling=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
     # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5
