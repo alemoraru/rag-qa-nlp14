@@ -1,10 +1,9 @@
 import json
-from sampling.SamplingGenerator import SamplingGenerator
-from evaluation.LlamaEngine import LlamaEngine
-from dto.Query import Query
-from dto.Query import QueryContext
-from dto.Query import Document
 import os
+
+from dto.Query import Document, Query, QueryContext
+from evaluation.LlamaEngine import LlamaEngine
+from sampling.SamplingGenerator import SamplingGenerator
 
 
 # available models: openai, llama, flant5, mistral

@@ -1,6 +1,7 @@
 import os
-from transformers import AutoModelForCausalLM, AutoTokenizer
+
 from huggingface_hub import login
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 access_token_read = os.environ["huggingface_token"]
 login(token=access_token_read)
