@@ -9,13 +9,30 @@ class SamplingGenerator:
     def __init__(self, response_dict):
         self.response_dict = response_dict
 
+    def relevant_sampling(self, k):
+        """
+        Retrieve top K relevant documents.
+        :param k: Number of relevant docs to be retrieved
+        :return: Dictionary containing the query_id and the top K relevant docs
+        """
+
+        result_dict = {}
+        for query_id, top_docs in self.response_dict.items():
+            # Sort top_docs by 'cosine similarity' in descending order
+            sorted_top_docs = dict(
+                sorted(top_docs.items(), key=lambda item: item[1], reverse=True)
+            )
+            result_dict[query_id] = dict(list(sorted_top_docs.items())[:k])
+
+        return result_dict
+
     def negative_sampling(self, k, negative_amount=2):
         """
         Perform negative sampling from the response dictionary
-        and append the negative docs with the top k relevant docs.
+        and append the negative docs with the top K relevant docs.
         :param k: Number of relevant docs to be retrieved
         :param negative_amount: Number of negative docs to be retrieved
-        :return: Dictionary containing the query_id and the top k relevant docs
+        :return: Dictionary containing the query_id and the top K relevant docs
         """
 
         result_dict = {}
@@ -58,22 +75,5 @@ class SamplingGenerator:
                 remaining_docs, min(random_amount, len(remaining_docs))
             )
             result_dict[query_id] = top_k + random_docs
-
-        return result_dict
-
-    def relevant_sampling(self, k):
-        """
-        Retrieve top k relevant documents.
-        :param k: Number of relevant docs to be retrieved
-        :return: Dictionary containing the query_id and the top k relevant docs
-        """
-
-        result_dict = {}
-        for query_id, top_docs in self.response_dict.items():
-            # Sort top_docs by 'cosine similarity' in descending order
-            sorted_top_docs = dict(
-                sorted(top_docs.items(), key=lambda item: item[1], reverse=True)
-            )
-            result_dict[query_id] = dict(list(sorted_top_docs.items())[:k])
 
         return result_dict

@@ -158,41 +158,38 @@ class EvalPipeline:
 
 
 def perform_evaluation(
-    sampling: SamplingMethod = SamplingMethod.GOLDEN,
+    sampling_method: SamplingMethod = SamplingMethod.GOLDEN,
     k=1,
 ) -> None:
     """
     Perform evaluation on the RAG QA pipeline using the provided sampling method and K argument.
-    :param sampling: the sampling method to be used
+    :param sampling_method: the sampling method to be used
     :param k: the number of relevant docs to be retrieved
     :return: None
     """
 
     start_time = time.time()
-    logging.info(f"Starting evaluation with: {sampling} and K={k}")
+    logging.info(f"Starting evaluation with: {sampling_method} and K={k}")
+    eval_pipeline = EvalPipeline(model="llama")
 
-    # Retrieve the documents using negative sampling
-    sampling_docs = retrieve_sampling(
-        file="responseDict", sampling=SamplingMethod.NEGATIVE, k=k
-    )
-
-    # Save the sampling docs
-    with open("samplingOut", "w") as file:
-        json.dump(sampling_docs, file)
+    # Retrieve the sampling docs
+    if sampling_method == SamplingMethod.GOLDEN:
+        sampling_docs = retrieve_sampling(
+            file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
+        )
+        eval_pipeline.set_golden_eval(golden=True)
+    else:
+        sampling_docs = retrieve_sampling(
+            file="responseDict", sampling=sampling_method, k=k
+        )
 
     logging.info("Aggregating data...")
     queries = aggregate_data(sampling_docs)
 
     logging.info("Starting the query evaluation with LLAMA...")
-    eval_pipeline = EvalPipeline(model="llama")
-
-    if sampling == SamplingMethod.GOLDEN:
-        logging.info("Serving golden docs!")
-        eval_pipeline.set_golden_eval(golden=True)
-
     answers = eval_pipeline.evaluate_queries(queries)
-    logging.info("Getting the results...")
 
+    logging.info("Getting the results...")
     correct_answers_exact_match = 0
     correct_answers_f1_score = 0
 
@@ -204,7 +201,7 @@ def perform_evaluation(
     num_answers = len(answers)
 
     logging.info(
-        f"Sampling with {sampling} with K={k} gives results:\n"
+        f"Sampling with {sampling_method} with K={k} gives results:\n"
         f"\tcorrect answers (EM): {correct_answers_exact_match} -> {correct_answers_exact_match} out of {num_answers} = {correct_answers_exact_match/num_answers}\n"
         f"\tcorrect answers (F1): {correct_answers_f1_score} -> {correct_answers_f1_score} out of {num_answers} = {correct_answers_f1_score/num_answers}"
     )
@@ -311,9 +308,9 @@ if __name__ == "__main__":
     # perform_evaluation(sampling=SamplingMethod.GOLDEN)
 
     # #Eval relevant docs only top 1
-    perform_evaluation(sampling=SamplingMethod.RELEVANT, k=1)
+    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
-    # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=3)
+    perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5
     # perform_evaluation(sampling=SamplingMethod.RELEVANT, k=5)
 
