@@ -57,10 +57,6 @@ Master's course at TU Delft.
     python3 -m evaluation.llm_orchestrator
     ```
 
-## Known Issues 🐛
-
-- The chat template in `llama_engine` is not compatible with the `meta-llama/Llama-3.1-8B` model.
-
 ## Additional Resources 📚
 
 - [Dexter repository](https://anonymous.4open.science/r/BCQA-05F9/README.md)
