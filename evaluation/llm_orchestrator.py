@@ -1,10 +1,18 @@
 import json
+import logging
 import os
 from enum import Enum
 
 from dto.query import Document, Query, QueryContext
 from evaluation.llama_engine import LlamaEngine
 from sampling.sampling_generator import SamplingGenerator
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s]:  %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 class SamplingMethod(Enum):
@@ -14,6 +22,69 @@ class SamplingMethod(Enum):
     RELEVANT = "relevant"
     NEGATIVE = "negative"
     RANDOM = "random"
+
+
+class EvalQA:
+    """
+    Class responsible for evaluating the QA answers based on the provided method.
+    """
+
+    def __init__(self, golden_answer: str, predicted_answer: str, log_results=False):
+        self.golden_answer = golden_answer
+        self.predicted_answer = predicted_answer
+        self.log_results = log_results
+
+        if self.log_results:
+            logging.info(f'Golden: "{self.golden_answer}"')
+            logging.info(f'Predicted: "{self.predicted_answer}"')
+
+    def exact_match(self) -> int:
+        """
+        Evaluate the QA answers based on the exact match method.
+        :return: 1 if the answer is correct, 0 otherwise
+        """
+
+        exact_match_classification = (
+            1 if self.golden_answer.lower() in self.predicted_answer.lower() else 0
+        )
+
+        if self.log_results:
+            logging.info(f"Exact match: {exact_match_classification}")
+        return exact_match_classification
+
+    def f1_score(self, threshold=0.75) -> int:
+        """
+        Evaluate the QA answers based on the F1 score method.
+        If the F1 score is greater than the threshold, then
+        the answer is considered correct (1), otherwise incorrect (0).
+        :param threshold: the threshold for the F1 score to be considered correct
+        :return: 1 if the answer is correct, 0 otherwise
+        """
+
+        # Tokenize the answers
+        golden_tokens = self.golden_answer.split()
+        predicted_tokens = self.predicted_answer.split()
+
+        # Create sets for the tokens
+        common_tokens = set(golden_tokens) & set(predicted_tokens)
+
+        # Count common tokens, and total tokens in each answer
+        num_common_tokens = len(common_tokens)
+        if num_common_tokens == 0:
+            return 0  # No common tokens, F1 score is 0, therefore answer is incorrect
+
+        # Calculate precision and recall
+        precision = num_common_tokens / len(predicted_tokens)
+        recall = num_common_tokens / len(golden_tokens)
+
+        # Calculate F1 score
+        f1 = 2 * (precision * recall) / (precision + recall)
+        f1_classification = 1 if f1 >= threshold else 0
+
+        if self.log_results:
+            logging.info(f"F1 score: {f1} -> {f1_classification}")
+
+        return f1_classification
 
 
 class EvalPipeline:
@@ -55,7 +126,7 @@ class EvalPipeline:
     def create_prompt(query: Query, prompt_type="document"):
         """
         Create a prompt to the query contains either the context (gold docs) of the query (prompt_type=context)
-        or the ones retrieved (promt_type = document).
+        or the ones retrieved (prompt_type = document).
         """
 
         context = []
@@ -76,37 +147,65 @@ class EvalPipeline:
     @staticmethod
     def assess_result(query: Query):
         """
-        Compare the actual vs the llm-based answer of the query based on Exact Match on words.
+        Compare the actual answer vs the LLM-based answer (i.e. result)
+        using both exact match and F1 score.
+        :param query: the query to be evaluated
+        :return: a tuple containing the exact match and classification using F1 score
         """
 
-        return 1 if query.answer.lower() in query.result.lower() else 0
+        eval_result = EvalQA(query.answer, query.result)
+        return eval_result.exact_match(), eval_result.f1_score()
 
 
-def perform_evaluation(sampling, k=1):
+def perform_evaluation(
+    sampling: SamplingMethod = SamplingMethod.GOLDEN,
+    k=1,
+) -> None:
+    """
+    Perform evaluation on the RAG QA pipeline using the provided sampling method and K argument.
+    :param sampling: the sampling method to be used
+    :param k: the number of relevant docs to be retrieved
+    :return: None
+    """
+
+    logging.info(f"Starting evaluation with: {sampling} and K={k}")
+
+    # Retrieve the documents using negative sampling
     sampling_docs = retrieve_sampling(
         file="responseDict", sampling=SamplingMethod.NEGATIVE, k=k
     )
 
+    # Save the sampling docs
     with open("samplingOut", "w") as file:
         json.dump(sampling_docs, file)
-    print("Aggregating data")
+
+    logging.info("Aggregating data...")
     queries = aggregate_data(sampling_docs)
 
-    print("Starting the query evaluation with LLAMA")
+    logging.info("Starting the query evaluation with LLAMA...")
     eval_pipeline = EvalPipeline(model="llama")
 
     if sampling == SamplingMethod.GOLDEN:
-        print("Serving golden docs")
+        logging.info("Serving golden docs!")
         eval_pipeline.set_golden_eval(golden=True)
 
-    answers = eval_pipeline.evaluate_queries(queries[:2])
-    print("Evaluating the results")
-    correct_answers = 0
-    for query in answers:
-        correct_answers += eval_pipeline.assess_result(query)
+    answers = eval_pipeline.evaluate_queries(queries[:5])
+    logging.info("Getting the results...")
 
-    print(
-        f"Sampling on {sampling} with k {k} with result: correct answers {correct_answers} out of total {len(answers)} -> {correct_answers / len(answers)}"
+    correct_answers_exact_match = 0
+    correct_answers_f1_score = 0
+
+    for query in answers:
+        exact_match, f1_score = eval_pipeline.assess_result(query)
+        correct_answers_exact_match += exact_match
+        correct_answers_f1_score += f1_score
+
+    num_answers = len(answers)
+
+    logging.info(
+        f"Sampling with {sampling} with K={k} gives results:\n"
+        f"\tcorrect answers (exact match): {correct_answers_exact_match} -> {correct_answers_exact_match} out of {num_answers} = {correct_answers_exact_match/num_answers}\n"
+        f"\tcorrect answers (F1 score): {correct_answers_f1_score} -> {correct_answers_f1_score} out of {num_answers} = {correct_answers_f1_score/num_answers}"
     )
 
 
@@ -138,8 +237,9 @@ def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
 
 def aggregate_data(response_dict):
     """
-    Aggregate the retrievers response with the datasets
-    and create dto classes of type Query that represents a query
+    Aggregate the retriever's response with the datasets
+    and create dto classes of type Query that represent queries.
+    :param response_dict: the response dictionary containing the query_id and the top k relevant docs
     """
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -170,21 +270,21 @@ def find_query_by_id(data, query_id: str):
     """
     Finds a query by id and retrieves a Query object
     """
-    for subjson in data:
-        if subjson.get("_id") == query_id:
+    for sub_json in data:
+        if sub_json.get("_id") == query_id:
             query_contexts = [
                 QueryContext(name=item[0], context=item[1])
-                for item in subjson.get("context")
+                for item in sub_json.get("context")
             ]
             return Query(
                 query_id,
-                subjson.get("answer"),
-                subjson.get("type"),
-                subjson.get("question"),
+                sub_json.get("answer"),
+                sub_json.get("type"),
+                sub_json.get("question"),
                 query_contexts,
             )
 
-    print(f"Found zero matching query with id: {query_id}")
+    logging.info(f"Found zero matching query with id: {query_id}")
     return None
 
 
@@ -192,18 +292,17 @@ def find_document_by_id(data, doc_id: str):
     """
     Finds a document by id and retrieves a Document object
     """
-    for key, subjson in data.items():
+    for key, sub_json in data.items():
         if key == doc_id:
-            return Document(doc_id, subjson.get("title"), subjson.get("text"))
+            return Document(doc_id, sub_json.get("title"), sub_json.get("text"))
 
-    print(f"Found zero matching docs with id: {doc_id}")
+    logging.info(f"Found zero matching docs with id: {doc_id}")
     return None
 
 
 if __name__ == "__main__":
-    print("-----Starting golden eval-----")
 
-    # Eval golden docs
+    # Eval golden docs top 1
     perform_evaluation(sampling=SamplingMethod.GOLDEN)
 
     # #Eval relevant docs only top 1
