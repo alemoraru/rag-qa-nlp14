@@ -1,10 +1,11 @@
 import random
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-from dto.query import QueryContext, Query
 import numpy as np
 import os
 import json
+
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from dto.query import QueryContext, Query
 
 
 class SamplingGenerator:
@@ -32,15 +33,13 @@ class SamplingGenerator:
 
         return result_dict
 
-    def negative_sampling(self, k, negative_amount=2):
+    def negative_sampling(self, k):
         """
         Perform negative sampling from the response dictionary
         and append the negative docs with the top K relevant docs.
         :param k: Number of relevant docs to be retrieved
-        :param negative_amount: Number of negative docs to be retrieved
         :return: Dictionary containing the query_id and the top K relevant docs
         """
-
         result_dict = {}
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
@@ -50,7 +49,8 @@ class SamplingGenerator:
 
             # Get the first k and the last n negative docs
             top_k = list(sorted_top_docs.items())[:k]
-            negative_docs = list(sorted_top_docs.items())[-negative_amount:]
+            negative_docs = list(sorted_top_docs.items())[k:] # potential negative documents are a total of 15 - topK
+
             result_dict[query_id] = top_k + negative_docs
         return result_dict
 
@@ -62,7 +62,8 @@ class SamplingGenerator:
         :param random_amount: number of random docs to be sampled
         :return: Dictionary containing the query_id and the top k relevant docs + random docs
         """
-
+        if k == 1:
+            random_amount = 1
         result_dict = {}
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
@@ -128,3 +129,5 @@ class SamplingGenerator:
             ))
 
         return queries_with_k_context
+    
+    
