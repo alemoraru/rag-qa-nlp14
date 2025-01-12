@@ -3,8 +3,10 @@ import transformers
 import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import login
+
 access_token_read = os.environ["huggingface_token"]
-login(token = access_token_read)
+login(token=access_token_read)
+
 
 class LlamaEngine:
 
@@ -14,7 +16,7 @@ class LlamaEngine:
         self.temperature = temperature
         self.data = data
         self.top_n = top_n
-        self.max_new_tokens=max_new_tokens
+        self.max_new_tokens = max_new_tokens
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
 
     def format_prompt(self, query, documents):
@@ -47,12 +49,11 @@ class LlamaEngine:
         output = self.model.generate(
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
-            max_new_tokens=1000, 
+            max_new_tokens=1000,
             temperature=0.3,
             top_p=0.9,
-        )   
+        )
 
         # Decode the response
         response = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return response
-        
