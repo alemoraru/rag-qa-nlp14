@@ -1,11 +1,12 @@
-import random
-import numpy as np
-import os
 import json
+import os
+import random
 
+import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from dto.query import QueryContext, Query
+
+from dto.query import Query, QueryContext
 
 
 class SamplingGenerator:
@@ -49,7 +50,9 @@ class SamplingGenerator:
 
             # Get the first k and the last n negative docs
             top_k = list(sorted_top_docs.items())[:k]
-            negative_docs = list(sorted_top_docs.items())[k:] # potential negative documents are a total of 15 - topK
+            negative_docs = list(sorted_top_docs.items())[
+                k:
+            ]  # potential negative documents are a total of 15 - topK
 
             result_dict[query_id] = top_k + negative_docs
         return result_dict
@@ -84,7 +87,6 @@ class SamplingGenerator:
             result_dict[query_id] = top_k + random_docs
 
         return result_dict
-    
 
     def golden_context_sampling(self):
         """
@@ -100,34 +102,35 @@ class SamplingGenerator:
             queries = json.load(file)
 
         queries_with_k_context = []
-        model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')              
+        model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
         for sub_json in queries[:10]:
             context = sub_json.get("context")
             question = sub_json.get("question")
             query_contexts = [
-                QueryContext(name=item[0], context=item[1])
-                for item in context
+                QueryContext(name=item[0], context=item[1]) for item in context
             ]
 
-            document_texts = [f"{doc.name} {doc.context}" for doc in query_contexts]        
+            document_texts = [f"{doc.name} {doc.context}" for doc in query_contexts]
             query_embedding = model.encode(question, convert_to_tensor=False)
             document_embeddings = model.encode(document_texts, convert_to_tensor=False)
 
             # Compute cosine similarity between the query and each document
-            similarity_scores = cosine_similarity([query_embedding], document_embeddings)[0]
- 
+            similarity_scores = cosine_similarity(
+                [query_embedding], document_embeddings
+            )[0]
+
             top_k_indices = np.argsort(similarity_scores)[::-1][:max_k]
             top_k_documents = [query_contexts[i] for i in top_k_indices]
-        
-            queries_with_k_context.append(Query(
-                sub_json.get("_id"),
-                sub_json.get("answer"),
-                sub_json.get("type"),
-                question,
-                top_k_documents,
-            ))
+
+            queries_with_k_context.append(
+                Query(
+                    sub_json.get("_id"),
+                    sub_json.get("answer"),
+                    sub_json.get("type"),
+                    question,
+                    top_k_documents,
+                )
+            )
 
         return queries_with_k_context
-    
-    
