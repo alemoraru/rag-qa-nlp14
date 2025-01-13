@@ -1,13 +1,13 @@
-import os
 import json
-import torch
+import os
 
+import torch
 from dexter.config.constants import Split
-from dexter.data.loaders.RetrieverDataset import RetrieverDataset
-from dexter.utils.metrics.SimilarityMatch import CosineSimilarity
-from dexter.utils.metrics.retrieval.RetrievalMetrics import RetrievalMetrics
 from dexter.data.datastructures.hyperparameters.dpr import DenseHyperParams
+from dexter.data.loaders.RetrieverDataset import RetrieverDataset
 from dexter.retriever.dense.Contriever import Contriever
+from dexter.utils.metrics.retrieval.RetrievalMetrics import RetrievalMetrics
+from dexter.utils.metrics.SimilarityMatch import CosineSimilarity
 
 
 def contriever(loader, to_save=False):
