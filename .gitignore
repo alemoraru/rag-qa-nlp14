@@ -1,3 +1,8 @@
-.idea/
 data/
+venv/
+.venv/
 .DS_Store
+__pycache__/
+samplingOut
+
+.idea/
