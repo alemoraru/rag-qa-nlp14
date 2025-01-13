@@ -106,10 +106,9 @@ class EvalPipeline:
     def set_golden_eval(self, golden: bool):
         self.golden_eval = golden
 
-    def evaluate_queries(self, queries: list[Query], k=1):
+    def evaluate_queries(self, queries: list[Query]):
         """
         For each query, the LLM is called to answer the query's prompt.
-        The K parameters retrieves top K golden docs if golden_eval=True.
         """
 
         prompt_type = "document"
@@ -117,7 +116,7 @@ class EvalPipeline:
             prompt_type = "context"
 
         for query in queries:
-            prompt, documents = self.create_prompt(query, prompt_type, k)
+            prompt, documents = self.create_prompt(query, prompt_type)
             llm_answer = self.llm_instance.get_llama_completion(
                 user_prompt=prompt, documents=documents
             )
@@ -127,7 +126,7 @@ class EvalPipeline:
         return queries
 
     @staticmethod
-    def create_prompt(query: Query, prompt_type="document", k=1):
+    def create_prompt(query: Query, prompt_type="document"):
         """
         Create a prompt to the query contains either the context (gold docs) of the query (prompt_type=context)
         or the ones retrieved (prompt_type = document).
@@ -137,7 +136,7 @@ class EvalPipeline:
         if prompt_type == "document":
             context = query.documents_to_dict()
         else:
-            context = query.context_to_dict(k)
+            context = query.context_to_dict()
 
         return query.question, context
 
@@ -194,7 +193,7 @@ def perform_evaluation(
         queries = sampling_docs  # use already processed queries
 
     logging.info("Starting the query evaluation with LLAMA...")
-    answers = eval_pipeline.evaluate_queries(queries, k)
+    answers = eval_pipeline.evaluate_queries(queries)
 
     logging.info("Getting the results...")
     correct_answers_exact_match = 0
@@ -238,7 +237,7 @@ def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
     if sampling == SamplingMethod.RANDOM:
         return sampling_generator.random_sampling(k)
     if sampling == SamplingMethod.GOLDEN:
-        return sampling_generator.golden_context_sampling()
+        return sampling_generator.golden_context_sampling(k)
 
     raise Exception(
         "Provide one of the following supported sampling types: relevant, negative or random."
@@ -355,10 +354,10 @@ if __name__ == "__main__":
     # Uncomment any of the lines below for evaluation using different settings
 
     # Eval golden docs top 1
-    # perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=3)
+    perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=1)
 
     # #Eval relevant docs only top 1
-    perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
+    #perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
     # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5

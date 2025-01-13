@@ -88,12 +88,11 @@ class SamplingGenerator:
 
         return result_dict
 
-    def golden_context_sampling(self):
+    def golden_context_sampling(self, k):
         """
         Perfom top K retrieval of golden documents for each query
         based on the embeddings cosine similarity between a query and the document
         """
-        max_k = 5
         script_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(script_dir, "../data/dataset/dev.json")
         file_path = os.path.abspath(file_path)
@@ -104,7 +103,7 @@ class SamplingGenerator:
         queries_with_k_context = []
         model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-        for sub_json in queries[:10]:
+        for sub_json in queries:
             context = sub_json.get("context")
             question = sub_json.get("question")
             query_contexts = [
@@ -120,7 +119,7 @@ class SamplingGenerator:
                 [query_embedding], document_embeddings
             )[0]
 
-            top_k_indices = np.argsort(similarity_scores)[::-1][:max_k]
+            top_k_indices = np.argsort(similarity_scores)[::-1][:k]
             top_k_documents = [query_contexts[i] for i in top_k_indices]
 
             queries_with_k_context.append(
