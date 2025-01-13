@@ -238,7 +238,7 @@ def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
     if sampling == SamplingMethod.RANDOM:
         return sampling_generator.random_sampling(k)
     if sampling == SamplingMethod.GOLDEN:
-        return sampling_generator.golden_context_sampling()
+        return sampling_generator.golden_context_sampling(k)
 
     raise Exception(
         "Provide one of the following supported sampling types: relevant, negative or random."
@@ -355,10 +355,10 @@ if __name__ == "__main__":
     # Uncomment any of the lines below for evaluation using different settings
 
     # Eval golden docs top 1
-    # perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=3)
+    perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=1)
 
     # #Eval relevant docs only top 1
-    perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
+    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
     # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5
