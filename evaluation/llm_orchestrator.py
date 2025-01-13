@@ -357,7 +357,7 @@ if __name__ == "__main__":
     perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=1)
 
     # #Eval relevant docs only top 1
-    #perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
+    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
     # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5
