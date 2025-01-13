@@ -71,7 +71,7 @@ class Query:
         """
         Method to convert the list of provided contexts to a list of dictionaries,
         wherein each dictionary contains the name and text of the query context.
-        :return: List of dictionaries containing the name and text of the query context.
+        :return: List of dictionaries containing the name and text of the top K query documents.
         """
 
         result = []

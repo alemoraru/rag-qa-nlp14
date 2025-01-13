@@ -4,6 +4,9 @@ import os
 import time
 from enum import Enum
 
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
 from dto.query import Document, Query, QueryContext
 from evaluation.llama_engine import LlamaEngine
 from sampling.sampling_generator import SamplingGenerator
@@ -117,7 +120,7 @@ class EvalPipeline:
             llm_answer = self.llm_instance.get_llama_completion(
                 user_prompt=prompt, documents=documents
             )
-            # print(f"Answer {llm_answer}")
+            # print(f"Answer {self.extract_correct_answer(llm_answer)}")
             query.set_result(self.extract_correct_answer(llm_answer))
 
         return queries
@@ -174,17 +177,20 @@ def perform_evaluation(
 
     # Retrieve the sampling docs
     if sampling_method == SamplingMethod.GOLDEN:
-        sampling_docs = retrieve_sampling(
-            file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
-        )
         eval_pipeline.set_golden_eval(golden=True)
-    else:
-        sampling_docs = retrieve_sampling(
-            file="responseDict", sampling=sampling_method, k=k
-        )
 
-    logging.info("Aggregating data...")
-    queries = aggregate_data(sampling_docs)
+    sampling_docs = retrieve_sampling(
+        file="responseDict", sampling=sampling_method, k=k
+    )
+
+    queries = []
+    if sampling_method != SamplingMethod.GOLDEN:
+        logging.info("Aggregating data...")
+        queries = aggregate_data(sampling_docs)
+        if sampling_method == SamplingMethod.NEGATIVE:
+            queries = find_hard_negatives(queries, k)  # find hard negatives
+    else:
+        queries = sampling_docs  # use already processed queries
 
     logging.info("Starting the query evaluation with LLAMA...")
     answers = eval_pipeline.evaluate_queries(queries)
@@ -230,10 +236,53 @@ def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
         return sampling_generator.negative_sampling(k)
     if sampling == SamplingMethod.RANDOM:
         return sampling_generator.random_sampling(k)
+    if sampling == SamplingMethod.GOLDEN:
+        return sampling_generator.golden_context_sampling(k)
 
     raise Exception(
         "Provide one of the following supported sampling types: relevant, negative or random."
     )
+
+
+def find_hard_negatives(queries, k):
+    """
+    Compute hard negatives but ranking 15-topK relevant documents with the ground truth
+    Hard negatives will be the lowest similar documents.
+    :param queries: queries to find hard negatives for
+    :k: used to derive the negative ratio of documents. For k = 1, the ration is 1, else for k = 3 or 5 the ration is 2.
+    """
+    negative_amount = 1
+    if k != negative_amount:
+        negative_amount = 2
+
+    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+    for query in queries:
+        scores = []
+        for neg in query.documents[k:]:
+            sum_score = 0
+            for c in query.query_context:
+                negative_doc_text = f"{neg.title} {neg.text}"
+                ground_truth_doc = f"{c.name} {c.context}"
+                neg_embedding = model.encode(negative_doc_text, convert_to_tensor=False)
+                context_embedding = model.encode(
+                    ground_truth_doc, convert_to_tensor=False
+                )
+                similarity_score = cosine_similarity(
+                    [neg_embedding], [context_embedding]
+                )[0][0]
+                sum_score += similarity_score
+            avg_score = sum_score / len(query.query_context)
+            scores.append(avg_score)
+        indexed_scores = list(enumerate(scores))
+        sorted_scores = sorted(indexed_scores, key=lambda x: x[1])
+        lowest_two = sorted_scores[:negative_amount]
+        hard_negatives = []
+        for id, _ in lowest_two:
+            hard_negatives.append(query.documents[k + id])
+        query.documents = query.documents[:k] + hard_negatives
+
+    return queries
 
 
 def aggregate_data(response_dict):
@@ -305,17 +354,17 @@ if __name__ == "__main__":
     # Uncomment any of the lines below for evaluation using different settings
 
     # Eval golden docs top 1
-    # perform_evaluation(sampling_method=SamplingMethod.GOLDEN)
+    perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=1)
 
     # #Eval relevant docs only top 1
-    perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
+    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
     # #Eval relevant docs only top 3
     # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
     # #Eval relevant docs only top 5
     # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=5)
 
     # #Eval negative docs with top 5 relevant, ratio 5:2
-    # perform_evaluation(sampling=SamplingMethod.NEGATIVE, k=5)
+    # perform_evaluation(sampling_method=SamplingMethod.NEGATIVE, k=1)
 
     # #Eval random docs with top 5 relevant, ratio 5:2
     # perform_evaluation(sampling_method=SamplingMethod.RANDOM, k=5)
