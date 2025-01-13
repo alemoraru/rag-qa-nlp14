@@ -1,3 +1,9 @@
 .idea/
 data/
 .DS_Store
+
+
+__pycache__/
+adore/models/
+adore/adore_data/
+star_embeddings/
