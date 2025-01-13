@@ -57,6 +57,25 @@ Master's course at TU Delft.
     python3 -m evaluation.llm_orchestrator
     ```
 
+## Code Quality Checks 🧹
+
+For ensuring consistent code quality, we use the following tools:
+
+1. **Black (Code Formatter)** - See [Black Documentation](https://black.readthedocs.io/en/stable/)
+2. **Isort (Import Sorter)** - See [Isort Documentation](https://pycqa.github.io/isort/)
+
+We advise running the following commands while in the root directory of this repository before committing any changes:
+
+1. `pip install -r requirements.txt` (if not already done when adding new features)
+2. `black --check .` (to check if the code is formatted correctly)
+    - If the above fails, run `black .` to automatically format the code.
+3. `isort --check-only .` (to check if the imports are sorted correctly)
+    - If the above fails, run `isort .` to automatically sort the imports.
+
+> **Note**: The above `black` & `isort` checks are also enforced in the CI pipeline when a pull request is created.
+> If the checks fail, the pull request cannot be merged, therefore it is recommended to run these checks locally.
+> We also recommend using `pylint` for static code analysis, but we do not enforce it in the CI pipeline.
+
 ## Additional Resources 📚
 
 - [Dexter repository](https://anonymous.4open.science/r/BCQA-05F9/README.md)
