@@ -19,21 +19,26 @@ def contriever(loader, to_save=False):
     print(queries[0].text())
 
     # Initialize your retriever configuration
-    config_instance = DenseHyperParams(query_encoder_path="facebook/contriever",
-                                       document_encoder_path="facebook/contriever",
-                                       batch_size=32, show_progress_bar=True)
+    config_instance = DenseHyperParams(
+        query_encoder_path="facebook/contriever",
+        document_encoder_path="facebook/contriever",
+        batch_size=32,
+        show_progress_bar=True,
+    )
 
     # Perform Retrieval
     contriever_search = Contriever(config_instance)
     similarity_measure = CosineSimilarity()
 
     # Original
-    response = contriever_search.retrieve(corpus, queries, 5, similarity_measure, chunk=True, chunksize=400000)
+    response = contriever_search.retrieve(
+        corpus, queries, 5, similarity_measure, chunk=True, chunksize=400000
+    )
     # response = contriever_search.retrieve(corpus, queries, 5, similarity_measure, chunk=True, chunksize=100000)
 
     if to_save:
         # Print the responses to a file
-        with open('../output/contriever_response.json', 'w', encoding='utf-8') as f:
+        with open("../output/contriever_response.json", "w", encoding="utf-8") as f:
             json.dump(response, f, ensure_ascii=False, indent=4)
 
     return response
@@ -46,9 +51,10 @@ def get_loader(split):
     # You can set the split to one of Split.DEV, Split.TEST or Split.TRAIN
     # Setting tokenizer=None only loads the raw data processed into our standard data classes, if tokenizer is set,
     # the data is also tokenized and stored in the loader.
-    config_path = os.getcwd() + '\\config.ini'
-    loader = RetrieverDataset("wikimultihopqa", "corpus",
-                              config_path, split, tokenizer=None)
+    config_path = os.getcwd() + "\\config.ini"
+    loader = RetrieverDataset(
+        "wikimultihopqa", "corpus", config_path, split, tokenizer=None
+    )
     return loader
 
 
@@ -66,7 +72,7 @@ def get_metrics(response, qrels, k_values=None):
 
 if __name__ == "__main__":
     # TODO Check how to run on CUDA
-    print(f'Is CUDA enabled: {torch.cuda.is_available()}')
+    print(f"Is CUDA enabled: {torch.cuda.is_available()}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(type(Contriever))
     k_values = [1, 3, 5]
