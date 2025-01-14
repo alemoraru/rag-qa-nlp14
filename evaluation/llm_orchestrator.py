@@ -165,6 +165,7 @@ def perform_evaluation(
     sampling_method: SamplingMethod = SamplingMethod.GOLDEN,
     k: int = 1,
     num_queries: Optional[int] = None,
+    retrieval_results_file: str = "responseDict",
     verbose: bool = False,
 ) -> None:
     """
@@ -172,13 +173,15 @@ def perform_evaluation(
     :param sampling_method: the sampling method to be used
     :param k: the number of relevant docs to be retrieved for each query
     :param num_queries: the number of queries to be evaluated (if None, all queries are evaluated)
+    :param retrieval_results_file: the path to the retrieval results file to be used during evaluation
     :param verbose: flag to log intermediate results
     :return: None
     """
 
     start_time = time.time()
     logging.info(
-        f"Starting evaluation with: {sampling_method}, K={k} for {num_queries if num_queries else 'all'} queries"
+        f"Starting evaluation with: {sampling_method}, K={k} for {num_queries if num_queries else 'all'} queries "
+        f"using the retrieval results from {retrieval_results_file}"
     )
     eval_pipeline = EvalPipeline(model="llama", verbose=verbose)
 
@@ -187,7 +190,7 @@ def perform_evaluation(
         eval_pipeline.set_golden_eval(golden=True)
 
     sampling_docs = retrieve_sampling(
-        file="responseDict", sampling=sampling_method, k=k
+        file=retrieval_results_file, sampling=sampling_method, k=k
     )
 
     if sampling_method != SamplingMethod.GOLDEN:
@@ -225,7 +228,7 @@ def perform_evaluation(
     logging.info(f"Execution time: {end_time - start_time} seconds")
 
 
-def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1):
+def retrieve_sampling(file: str, sampling=SamplingMethod.RELEVANT, k=1):
     """
     Select top k docs from the retrieved ones.
     The sampling can contain either:
@@ -234,7 +237,7 @@ def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
         - relevant and random with ratio k:2
     """
 
-    with open(f"{file}.json", "r") as file:
+    with open(f"{file}", "r") as file:
         response_dict = json.load(file)
 
     sampling_generator = SamplingGenerator(response_dict)
@@ -294,7 +297,7 @@ def find_hard_negatives(queries, k):
     return queries
 
 
-def aggregate_data(response_dict):
+def aggregate_data(response_dict: str):
     """
     Aggregate the retriever's response with the datasets
     and create dto classes of type Query that represent queries.
@@ -379,6 +382,14 @@ if __name__ == "__main__":
         help="Number of relevant documents to be retrieved.",
     )
     args_parser.add_argument(
+        "--retrieval_results_file",
+        "-f",
+        type=str,
+        default="responseDict",
+        required=False,
+        help="Path to the retrieval results file to use during evaluation (must be in JSON format).",
+    )
+    args_parser.add_argument(
         "--num_queries",
         "-q",
         type=int,
@@ -402,11 +413,16 @@ if __name__ == "__main__":
         )
     if args.num_queries and args.num_queries < 1:
         raise ValueError("The number of queries to be evaluated should be at least 1.")
+    if not os.path.exists(f"{args.retrieval_results_file}"):
+        raise FileNotFoundError(
+            f"The provided retrieval results file '{args.retrieval_results_file}' does not exist."
+        )
 
     # Actually perform the evaluation using the provided arguments
     perform_evaluation(
         sampling_method=SamplingMethod(args.sampling_method),
         k=args.k,
         num_queries=args.num_queries,
+        retrieval_results_file=args.retrieval_results_file,
         verbose=args.verbose,
     )

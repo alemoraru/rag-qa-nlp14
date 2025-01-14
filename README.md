@@ -70,6 +70,8 @@ The `llm_orchestrator` is parametrized, meaning you can tweak the following para
 --num_queries, -q: The number of queries to evaluate. Not required to be set, defaults to all queries. Should be used
 only for
 debugging purposes to evaluate a smaller subset of queries.
+--retrieval_results_file, -f: The file containing the retrieval results. Not required to be set, defaults to the
+                              responseDict.json file found in the root directory of this repository.
 --verbose, -v: Whether to print verbose output. Not required to be set, defaults to False.
 ```
 
