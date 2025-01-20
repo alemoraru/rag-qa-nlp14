@@ -173,7 +173,7 @@ if __name__ == "__main__":
         output_dir="adore_data/passage/evaluate_rel",
         preprocess_dir="adore_data/passage/preprocess_rel",
         mode=args.mode,  # "test"
-        topk=10,
+        topk=15,
         dmemmap_path="star_embeddings/passages.memmap",
         pergpu_eval_batch_size=32,
         max_seq_length=64,

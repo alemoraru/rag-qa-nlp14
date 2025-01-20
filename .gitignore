@@ -3,7 +3,7 @@ adore/models/*
 !adore/models/adore_model_finetuned/
 
 adore/models/adore_model_finetuned/*
-!adore/models/adore_model_finetuned/epoch-6
+!adore/models/adore_model_finetuned/epoch-15
 
 adore/adore_data/
 star_embeddings/
