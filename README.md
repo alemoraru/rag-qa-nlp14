@@ -52,10 +52,50 @@ Master's course at TU Delft.
 
 ## Running the Project 🏃
 
-- Execute the following command to run the project:
-    ```sh
-    python3 -m evaluation.llm_orchestrator
-    ```
+Assuming you have already run the retrieval step (either using contriever or ADORE), and now you would like to
+actually evaluate the RAG pipeline on the provided set of queries, you can run the following command, while
+within the root directory of the repository:
+
+```shell
+python -m evaluation.llm_orchestrator -s relevant -k 1 -q 2
+```
+
+As already noticed the command above is parametrized. What it does is it that it runs the LLM orchestrator using
+the `relevant` sampling method (i.e. positive examples), with a top-k value of `1`, and evaluates just `2` queries.
+The `llm_orchestrator` is parametrized, meaning you can tweak the following parameters:
+
+```markdown
+--sampling_method, -s: The sampling method to use. Options: relevant, negative, random, golden. Required to be set.
+--k, -k: The number of top-k documents to use while retrieving answers. Required to be set.
+--num_queries, -q: The number of queries to evaluate. Not required to be set, defaults to all queries. Should be used
+only for
+debugging purposes to evaluate a smaller subset of queries.
+--retrieval_results_file, -f: The file containing the retrieval results. Not required to be set, defaults to the
+                              responseDict.json file found in the root directory of this repository.
+--verbose, -v: Whether to print verbose output. Not required to be set, defaults to False.
+```
+
+> **Note**: You can also run `python -m evaluation.llm_orchestrator --help` to see the above information in the
+> terminal (will be displayed as a help message in a different way).
+
+Additionally, you will notice that the `llm_orchestrator` also requires to set the `huggingface_token` environment
+variable. Depending on your OS and mode of running, this can be done in different ways. For example, if you are
+simply running everything from the command line on a Unix system, you can set the environment variable as follows:
+
+```shell
+# replace YOUR_HUGGING_FACE_TOKEN with the actual token
+export huggingface_token="YOUR_HUGGING_FACE_TOKEN"
+```
+
+If the token is not set properly, you will get the following error message:
+
+```shell
+...
+    raise KeyError(key) from None
+KeyError: 'huggingface_token'
+```
+
+Refer back to the [Hugging Face Token](#hugging-face-token-) section for more information on how to obtain the token.
 
 ## Code Quality Checks 🧹
 

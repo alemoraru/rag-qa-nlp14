@@ -1,8 +1,10 @@
+import argparse
 import json
 import logging
 import os
 import time
 from enum import Enum
+from typing import Optional
 
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -97,11 +99,12 @@ class EvalPipeline:
     Available models: openai, llama, flant5, mistral
     """
 
-    def __init__(self, model="llama", golden_evaluation=False):
+    def __init__(self, model="llama", golden_evaluation=False, verbose=False):
         self.golden_eval = golden_evaluation
         self.llm_instance = LlamaEngine(
             data="", model_name="meta-llama/Llama-3.2-1B-Instruct"
         )
+        self.verbose = verbose
 
     def set_golden_eval(self, golden: bool):
         self.golden_eval = golden
@@ -132,7 +135,6 @@ class EvalPipeline:
         or the ones retrieved (prompt_type = document).
         """
 
-        context = []
         if prompt_type == "document":
             context = query.documents_to_dict()
         else:
@@ -147,8 +149,7 @@ class EvalPipeline:
 
         return assistant_response
 
-    @staticmethod
-    def assess_result(query: Query):
+    def assess_result(self, query: Query):
         """
         Compare the actual answer vs the LLM-based answer (i.e. result)
         using both exact match and F1 score.
@@ -156,34 +157,42 @@ class EvalPipeline:
         :return: a tuple containing the exact match and classification using F1 score
         """
 
-        eval_result = EvalQA(query.answer, query.result)
+        eval_result = EvalQA(query.answer, query.result, self.verbose)
         return eval_result.exact_match(), eval_result.f1_score()
 
 
 def perform_evaluation(
     sampling_method: SamplingMethod = SamplingMethod.GOLDEN,
-    k=1,
+    k: int = 1,
+    num_queries: Optional[int] = None,
+    retrieval_results_file: str = "responseDict",
+    verbose: bool = False,
 ) -> None:
     """
     Perform evaluation on the RAG QA pipeline using the provided sampling method and K argument.
     :param sampling_method: the sampling method to be used
-    :param k: the number of relevant docs to be retrieved
+    :param k: the number of relevant docs to be retrieved for each query
+    :param num_queries: the number of queries to be evaluated (if None, all queries are evaluated)
+    :param retrieval_results_file: the path to the retrieval results file to be used during evaluation
+    :param verbose: flag to log intermediate results
     :return: None
     """
 
     start_time = time.time()
-    logging.info(f"Starting evaluation with: {sampling_method} and K={k}")
-    eval_pipeline = EvalPipeline(model="llama")
+    logging.info(
+        f"Starting evaluation with: {sampling_method}, K={k} for {num_queries if num_queries else 'all'} queries "
+        f"using the retrieval results from {retrieval_results_file}"
+    )
+    eval_pipeline = EvalPipeline(model="llama", verbose=verbose)
 
     # Retrieve the sampling docs
     if sampling_method == SamplingMethod.GOLDEN:
         eval_pipeline.set_golden_eval(golden=True)
 
     sampling_docs = retrieve_sampling(
-        file="responseDict", sampling=sampling_method, k=k
+        file=retrieval_results_file, sampling=sampling_method, k=k
     )
 
-    queries = []
     if sampling_method != SamplingMethod.GOLDEN:
         logging.info("Aggregating data...")
         queries = aggregate_data(sampling_docs)
@@ -193,7 +202,10 @@ def perform_evaluation(
         queries = sampling_docs  # use already processed queries
 
     logging.info("Starting the query evaluation with LLAMA...")
-    answers = eval_pipeline.evaluate_queries(queries)
+    if num_queries:
+        answers = eval_pipeline.evaluate_queries(queries[:num_queries])
+    else:
+        answers = eval_pipeline.evaluate_queries(queries)
 
     logging.info("Getting the results...")
     correct_answers_exact_match = 0
@@ -208,15 +220,15 @@ def perform_evaluation(
 
     logging.info(
         f"Sampling with {sampling_method} with K={k} gives results:\n"
-        f"\tcorrect answers (EM): {correct_answers_exact_match} -> {correct_answers_exact_match} out of {num_answers} = {correct_answers_exact_match/num_answers}\n"
-        f"\tcorrect answers (F1): {correct_answers_f1_score} -> {correct_answers_f1_score} out of {num_answers} = {correct_answers_f1_score/num_answers}"
+        f"\tcorrect answers (EM): {correct_answers_exact_match} -> {correct_answers_exact_match} out of {num_answers} = {correct_answers_exact_match / num_answers}\n"
+        f"\tcorrect answers (F1): {correct_answers_f1_score} -> {correct_answers_f1_score} out of {num_answers} = {correct_answers_f1_score / num_answers}"
     )
 
     end_time = time.time()
     logging.info(f"Execution time: {end_time - start_time} seconds")
 
 
-def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1):
+def retrieve_sampling(file: str, sampling=SamplingMethod.RELEVANT, k=1):
     """
     Select top k docs from the retrieved ones.
     The sampling can contain either:
@@ -225,7 +237,7 @@ def retrieve_sampling(file="responseDict", sampling=SamplingMethod.RELEVANT, k=1
         - relevant and random with ratio k:2
     """
 
-    with open(f"{file}.json", "r") as file:
+    with open(f"{file}", "r") as file:
         response_dict = json.load(file)
 
     sampling_generator = SamplingGenerator(response_dict)
@@ -249,7 +261,7 @@ def find_hard_negatives(queries, k):
     Compute hard negatives but ranking 15-topK relevant documents with the ground truth
     Hard negatives will be the lowest similar documents.
     :param queries: queries to find hard negatives for
-    :k: used to derive the negative ratio of documents. For k = 1, the ration is 1, else for k = 3 or 5 the ration is 2.
+    :param k: used to derive the negative ratio of documents. For k = 1, the ration is 1, else for k = 3 or 5 the ration is 2.
     """
     negative_amount = 1
     if k != negative_amount:
@@ -285,7 +297,7 @@ def find_hard_negatives(queries, k):
     return queries
 
 
-def aggregate_data(response_dict):
+def aggregate_data(response_dict: str):
     """
     Aggregate the retriever's response with the datasets
     and create dto classes of type Query that represent queries.
@@ -351,20 +363,66 @@ def find_document_by_id(data, doc_id: str):
 
 
 if __name__ == "__main__":
-    # Uncomment any of the lines below for evaluation using different settings
+    args_parser = argparse.ArgumentParser()
+    args_parser.add_argument(
+        "--sampling_method",
+        "-s",
+        type=str,
+        choices=[e.value for e in SamplingMethod],
+        default=SamplingMethod.RELEVANT.value,
+        required=True,
+        help="Sampling method to be used for the evaluation.",
+    )
+    args_parser.add_argument(
+        "--k",
+        "-k",
+        type=int,
+        default=1,
+        required=True,
+        help="Number of relevant documents to be retrieved.",
+    )
+    args_parser.add_argument(
+        "--retrieval_results_file",
+        "-f",
+        type=str,
+        default="responseDict",
+        required=False,
+        help="Path to the retrieval results file to use during evaluation (must be in JSON format).",
+    )
+    args_parser.add_argument(
+        "--num_queries",
+        "-q",
+        type=int,
+        default=None,
+        required=False,
+        help="Number of queries to be evaluated.",
+    )
+    args_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        required=False,
+        help="Flag to be verbose in logging intermediate results.",
+    )
+    args = args_parser.parse_args()
 
-    # Eval golden docs top 1
-    perform_evaluation(sampling_method=SamplingMethod.GOLDEN, k=1)
+    # Input validation of the provided arguments
+    if args.k < 1:
+        raise ValueError(
+            "The number of relevant documents to be retrieved should be at least 1."
+        )
+    if args.num_queries and args.num_queries < 1:
+        raise ValueError("The number of queries to be evaluated should be at least 1.")
+    if not os.path.exists(f"{args.retrieval_results_file}"):
+        raise FileNotFoundError(
+            f"The provided retrieval results file '{args.retrieval_results_file}' does not exist."
+        )
 
-    # #Eval relevant docs only top 1
-    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=1)
-    # #Eval relevant docs only top 3
-    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=3)
-    # #Eval relevant docs only top 5
-    # perform_evaluation(sampling_method=SamplingMethod.RELEVANT, k=5)
-
-    # #Eval negative docs with top 5 relevant, ratio 5:2
-    # perform_evaluation(sampling_method=SamplingMethod.NEGATIVE, k=1)
-
-    # #Eval random docs with top 5 relevant, ratio 5:2
-    # perform_evaluation(sampling_method=SamplingMethod.RANDOM, k=5)
+    # Actually perform the evaluation using the provided arguments
+    perform_evaluation(
+        sampling_method=SamplingMethod(args.sampling_method),
+        k=args.k,
+        num_queries=args.num_queries,
+        retrieval_results_file=args.retrieval_results_file,
+        verbose=args.verbose,
+    )
