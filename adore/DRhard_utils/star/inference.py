@@ -45,6 +45,8 @@ def prediction(model, data_collator, args, test_dataset, embedding_memmap, ids_m
     
     model.eval()
     write_index = 0
+
+    # Compute document embeddings
     for step, (inputs, ids) in enumerate(tqdm(test_dataloader)):
         for k, v in inputs.items():
             if isinstance(v, torch.Tensor):
@@ -62,6 +64,8 @@ def prediction(model, data_collator, args, test_dataset, embedding_memmap, ids_m
 
 
 def doc_inference(model, args, embedding_size):
+    """Compute documents/passages embeddings using STAR."""
+
     if os.path.exists(args.doc_memmap_path):
         print(f"{args.doc_memmap_path} exists, skip inference")
         return

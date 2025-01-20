@@ -1,4 +1,10 @@
-adore/models/
+adore/models/*
+
+!adore/models/adore_model_finetuned/
+
+adore/models/adore_model_finetuned/*
+!adore/models/adore_model_finetuned/epoch-6
+
 adore/adore_data/
 star_embeddings/
 data/
