@@ -5,16 +5,17 @@ from torch._C import dtype
 
 sys.path += ["./"]
 import torch
-from torch import nn
 import transformers
+from torch import nn
 
 if int(transformers.__version__[0]) <= 3:
     from transformers.modeling_roberta import RobertaPreTrainedModel
 else:
     from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
-from transformers import RobertaModel
+
 import torch.nn.functional as F
 from torch.cuda.amp import autocast
+from transformers import RobertaModel
 
 
 class EmbeddingMixin:

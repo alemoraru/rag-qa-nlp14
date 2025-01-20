@@ -1,27 +1,23 @@
-import torch
-import faiss
-import sys
-import os
-import numpy as np
-import pickle
-from tqdm import tqdm
-import json
 import argparse
-
-from transformers import RobertaConfig
+import json
+import logging
+import os
+import pickle
+import sys
 from types import SimpleNamespace
 
-
-from DRhard_utils.model import RobertaDot
+import faiss
+import numpy as np
+import torch
 from DRhard_utils.adore.inference import evaluate
+from DRhard_utils.model import RobertaDot
 from DRhard_utils.retrieve_utils import (
     construct_flatindex_from_embeddings,
-    index_retrieve,
     convert_index_to_gpu,
+    index_retrieve,
 )
-
-
-import logging
+from tqdm import tqdm
+from transformers import RobertaConfig
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

@@ -1,18 +1,19 @@
 import sys
 
 sys.path += ["./"]
-import os
-import math
 import json
-import torch
+import logging
+import math
+import os
 import pickle
 import random
-import logging
-import numpy as np
-from tqdm import tqdm
 from collections import defaultdict
-from torch.utils.data import Dataset
 from typing import List
+
+import numpy as np
+import torch
+from torch.utils.data import Dataset
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 

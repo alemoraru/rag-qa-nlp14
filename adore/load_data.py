@@ -1,13 +1,12 @@
-import os
+import argparse
 import csv
 import json
-import argparse
-import mmh3
+import os
 
+import mmh3
+from bs4 import BeautifulSoup
 from dexter.config.constants import Split
 from dexter.data.loaders.RetrieverDataset import RetrieverDataset
-
-from bs4 import BeautifulSoup
 
 
 def load_json(input_path):

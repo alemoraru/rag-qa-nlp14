@@ -2,10 +2,11 @@ import sys
 
 sys.path += ["./"]
 import os
+from timeit import default_timer as timer
+
 import faiss
 import numpy as np
 from tqdm import tqdm
-from timeit import default_timer as timer
 
 
 def index_retrieve(index, query_embeddings, topk, batch=None):

@@ -20,14 +20,6 @@ is necessary to use the RobertaTokenizer in this file or the one defined
 in Transformers 2.x version.
 """
 
-import logging
-import json
-import os
-import regex as re
-from functools import lru_cache
-from typing import List, Optional
-
-
 import copy
 import itertools
 import json
@@ -35,10 +27,11 @@ import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import lru_cache
 from typing import List, Optional, Tuple, Union
 
+import regex as re
 from tokenizers.implementations import BaseTokenizer
-
 
 """
 Utilities for working with the local dataset cache.

@@ -12,9 +12,8 @@ Authors : Daniel Campos <dacamp@microsoft.com>, Rutger van Haasteren <ruvanh@mic
 """
 I (Jingtao Zhan) modified this script for evaluating MSMARCO Doc dataset. --- 4/19/2021
 """
-import sys
 import statistics
-
+import sys
 from collections import Counter
 
 MaxMRRRank = 10

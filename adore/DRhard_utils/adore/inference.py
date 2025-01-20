@@ -1,27 +1,28 @@
 import sys
 
 sys.path += ["./"]
-import os
-import torch
-import faiss
-import logging
 import argparse
+import logging
+import os
 import subprocess
+
+import faiss
 import numpy as np
-from tqdm import tqdm
-from torch.utils.data import DataLoader
-from transformers import RobertaConfig
-from DRhard_utils.model import RobertaDot
+import torch
 from DRhard_utils.dataset import (
-    TextTokenIdsCache,
     SequenceDataset,
+    TextTokenIdsCache,
     get_collate_function,
 )
+from DRhard_utils.model import RobertaDot
 from DRhard_utils.retrieve_utils import (
     construct_flatindex_from_embeddings,
-    index_retrieve,
     convert_index_to_gpu,
+    index_retrieve,
 )
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from transformers import RobertaConfig
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

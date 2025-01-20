@@ -2,20 +2,21 @@ import enum
 import sys
 
 sys.path += ["./"]
-import os
-import torch
+import argparse
+import csv
 import gzip
+import json
+import multiprocessing
+import os
 import pickle
 import subprocess
-import csv
-import multiprocessing
-import numpy as np
 from os import listdir
 from os.path import isfile, join
-import argparse
-import json
-from tqdm import tqdm
+
+import numpy as np
+import torch
 from star_tokenizer import RobertaTokenizer
+from tqdm import tqdm
 
 
 def pad_input_ids(input_ids, max_length, pad_on_left=False, pad_token=0):

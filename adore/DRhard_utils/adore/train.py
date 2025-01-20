@@ -1,22 +1,22 @@
 import sys
 
 sys.path += ["./"]
-import os
-import time
-import torch
-import random
-import faiss
-import logging
 import argparse
+import logging
+import os
+import random
 import subprocess
-import numpy as np
-from tqdm import tqdm, trange
-from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data import DataLoader, RandomSampler
-from transformers import AdamW, get_linear_schedule_with_warmup, RobertaConfig
+import time
 
-from dataset import TextTokenIdsCache, SequenceDataset, load_rel, pack_tensor_2D
+import faiss
+import numpy as np
+import torch
+from dataset import SequenceDataset, TextTokenIdsCache, load_rel, pack_tensor_2D
 from model import RobertaDot
+from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm, trange
+from transformers import AdamW, RobertaConfig, get_linear_schedule_with_warmup
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
