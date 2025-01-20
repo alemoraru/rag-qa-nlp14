@@ -151,8 +151,8 @@ class AdoreInferencePipeline:
                 qid, pid, rank = line.strip().split()
                 key = mappings[qid]
                 if key not in result_dict:
-                    result_dict[key] = []
-                result_dict[key].append((pid, rank))
+                    result_dict[key] = {}
+                result_dict[key][pid]=rank
 
         return result_dict
 
