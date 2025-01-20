@@ -242,7 +242,6 @@ def retrieve_sampling(file: str, sampling=SamplingMethod.RELEVANT, k=1, not_ador
         response_dict = json.load(file)
 
     sampling_generator = SamplingGenerator(response_dict, not_adore)
-
     if sampling == SamplingMethod.RELEVANT:
         return sampling_generator.relevant_sampling(k)
     if sampling == SamplingMethod.NEGATIVE:
@@ -294,7 +293,7 @@ def find_hard_negatives(queries, k):
         for id, _ in lowest_two:
             hard_negatives.append(query.documents[k + id])
         query.documents = query.documents[:k] + hard_negatives
-
+    print(queries)
     return queries
 
 
@@ -406,6 +405,7 @@ if __name__ == "__main__":
         help="Flag to be verbose in logging intermediate results.",
     )
     args_parser.add_argument(
+        "-a"
         "--not_adore",
         action="store_false",
         required=False,
