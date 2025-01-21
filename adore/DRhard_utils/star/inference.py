@@ -10,8 +10,13 @@ import os
 import faiss
 import numpy as np
 import torch
-from dataset import (SequenceDataset, SubsetSeqDataset, TextTokenIdsCache,
-                     load_rel, single_get_collate_function)
+from dataset import (
+    SequenceDataset,
+    SubsetSeqDataset,
+    TextTokenIdsCache,
+    load_rel,
+    single_get_collate_function,
+)
 from model import RobertaDot
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.sampler import SequentialSampler

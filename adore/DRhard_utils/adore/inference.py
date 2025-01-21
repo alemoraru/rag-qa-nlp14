@@ -9,11 +9,17 @@ import subprocess
 import faiss
 import numpy as np
 import torch
-from DRhard_utils.dataset import (SequenceDataset, TextTokenIdsCache,
-                                  get_collate_function)
+from DRhard_utils.dataset import (
+    SequenceDataset,
+    TextTokenIdsCache,
+    get_collate_function,
+)
 from DRhard_utils.model import RobertaDot
-from DRhard_utils.retrieve_utils import (construct_flatindex_from_embeddings,
-                                         convert_index_to_gpu, index_retrieve)
+from DRhard_utils.retrieve_utils import (
+    construct_flatindex_from_embeddings,
+    convert_index_to_gpu,
+    index_retrieve,
+)
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import RobertaConfig
