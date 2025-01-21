@@ -167,7 +167,7 @@ def perform_evaluation(
     num_queries: Optional[int] = None,
     retrieval_results_file: str = "responseDict",
     verbose: bool = False,
-    not_adore: bool = False
+    not_adore: bool = False,
 ) -> None:
     """
     Perform evaluation on the RAG QA pipeline using the provided sampling method and K argument.
@@ -405,8 +405,7 @@ if __name__ == "__main__":
         help="Flag to be verbose in logging intermediate results.",
     )
     args_parser.add_argument(
-        "-a"
-        "--not_adore",
+        "-a" "--not_adore",
         action="store_false",
         required=False,
         help="If ADORE is used as a retriever.",

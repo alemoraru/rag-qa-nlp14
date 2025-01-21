@@ -16,7 +16,7 @@ class SamplingGenerator:
 
     def __init__(self, response_dict, not_adore=True):
         self.response_dict = response_dict
-        self.not_adore=not_adore
+        self.not_adore = not_adore
 
     def relevant_sampling(self, k):
         """
@@ -29,7 +29,9 @@ class SamplingGenerator:
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
             sorted_top_docs = dict(
-                sorted(top_docs.items(), key=lambda item: item[1], reverse=self.not_adore)
+                sorted(
+                    top_docs.items(), key=lambda item: item[1], reverse=self.not_adore
+                )
             )
             result_dict[query_id] = list(sorted_top_docs.items())[:k]
 
