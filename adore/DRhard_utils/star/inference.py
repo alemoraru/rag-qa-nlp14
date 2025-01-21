@@ -4,24 +4,19 @@ import subprocess
 import sys
 
 sys.path.append("./")
-import faiss
 import logging
 import os
+
+import faiss
 import numpy as np
 import torch
-from transformers import RobertaConfig
-from tqdm import tqdm
+from dataset import (SequenceDataset, SubsetSeqDataset, TextTokenIdsCache,
+                     load_rel, single_get_collate_function)
+from model import RobertaDot
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.sampler import SequentialSampler
-
-from model import RobertaDot
-from dataset import (
-    TextTokenIdsCache,
-    load_rel,
-    SubsetSeqDataset,
-    SequenceDataset,
-    single_get_collate_function,
-)
+from tqdm import tqdm
+from transformers import RobertaConfig
 
 logger = logging.Logger(__name__)
 

@@ -11,7 +11,8 @@ import time
 import faiss
 import numpy as np
 import torch
-from dataset import SequenceDataset, TextTokenIdsCache, load_rel, pack_tensor_2D
+from dataset import (SequenceDataset, TextTokenIdsCache, load_rel,
+                     pack_tensor_2D)
 from model import RobertaDot
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.tensorboard import SummaryWriter
