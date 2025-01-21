@@ -123,16 +123,22 @@ class SamplingGenerator:
 
         queries_with_k_context = []
         model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-
+        
         for sub_json in queries:
+            query_id = sub_json.get("_id")
+            
+            if not self.find_query_in_contriever_response(query_id):
+                continue
+            
             context = sub_json.get("context")
             question = sub_json.get("question")
+            answer = sub_json.get("answer")
             query_contexts = [
                 QueryContext(name=item[0], context=item[1]) for item in context
             ]
 
             document_texts = [f"{doc.name} {doc.context}" for doc in query_contexts]
-            query_embedding = model.encode(question, convert_to_tensor=False)
+            query_embedding = model.encode(answer, convert_to_tensor=False)
             document_embeddings = model.encode(document_texts, convert_to_tensor=False)
 
             # Compute cosine similarity between the query and each document
@@ -142,10 +148,10 @@ class SamplingGenerator:
 
             top_k_indices = np.argsort(similarity_scores)[::-1][:k]
             top_k_documents = [query_contexts[i] for i in top_k_indices]
-
+   
             queries_with_k_context.append(
                 Query(
-                    sub_json.get("_id"),
+                    query_id,
                     sub_json.get("answer"),
                     sub_json.get("type"),
                     question,
@@ -154,3 +160,10 @@ class SamplingGenerator:
             )
 
         return queries_with_k_context
+    
+    def find_query_in_contriever_response(self, query_id):
+        for id, _ in self.response_dict.items():
+            if id == query_id:
+                return True
+            
+        return False
