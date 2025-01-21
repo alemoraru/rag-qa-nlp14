@@ -89,16 +89,18 @@ class SamplingGenerator:
             while len(random_docs) < random_amount and attempts < 10 * len(queries):
                 # Pick a random query that is not the current one
                 random_query_id = random.choice(queries)
-                
+
                 if random_query_id == query_id:
                     continue
-    
+
                 # Get the documents of the random query
                 random_query_docs = self.response_dict[random_query_id]
 
                 # Pick one random document from the random query
                 for doc_id, score in random_query_docs.items():
-                    if doc_id not in top_k_doc_ids and doc_id not in {doc[0] for doc in random_docs}:
+                    if doc_id not in top_k_doc_ids and doc_id not in {
+                        doc[0] for doc in random_docs
+                    }:
                         random_docs.append((doc_id, score))
                         break
 
@@ -107,7 +109,6 @@ class SamplingGenerator:
             result_dict[query_id] = top_k + random_docs
 
         return result_dict
-
 
     def golden_context_sampling(self, k):
         """
@@ -123,13 +124,13 @@ class SamplingGenerator:
 
         queries_with_k_context = []
         model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-        
+
         for sub_json in queries:
             query_id = sub_json.get("_id")
-            
+
             if not self.find_query_in_contriever_response(query_id):
                 continue
-            
+
             context = sub_json.get("context")
             question = sub_json.get("question")
             answer = sub_json.get("answer")
@@ -148,7 +149,7 @@ class SamplingGenerator:
 
             top_k_indices = np.argsort(similarity_scores)[::-1][:k]
             top_k_documents = [query_contexts[i] for i in top_k_indices]
-   
+
             queries_with_k_context.append(
                 Query(
                     query_id,
@@ -160,10 +161,10 @@ class SamplingGenerator:
             )
 
         return queries_with_k_context
-    
+
     def find_query_in_contriever_response(self, query_id):
         for id, _ in self.response_dict.items():
             if id == query_id:
                 return True
-            
+
         return False
