@@ -68,6 +68,7 @@ class SamplingGenerator:
         if k == 1:
             random_amount = 1
         result_dict = {}
+        queries = list(self.response_dict.keys())  # Get all query IDs
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
             sorted_top_docs = dict(
@@ -77,16 +78,36 @@ class SamplingGenerator:
             # Get the first k docs
             top_k = list(sorted_top_docs.items())[:k]
 
-            # Get remaining docs by excluding the top k docs
-            remaining_docs = list(sorted_top_docs.items())[k:]
+            # Extract the document IDs of the top k docs
+            top_k_doc_ids = {doc_id for doc_id, _ in top_docs.items()}
 
-            # Get random docs from the remaining docs
-            random_docs = random.sample(
-                remaining_docs, min(random_amount, len(remaining_docs))
-            )
+            # Initialize the random_docs list
+            random_docs = []
+            attempts = 0
+
+            # Attempt to find random docs from other queries
+            while len(random_docs) < random_amount and attempts < 10 * len(queries):
+                # Pick a random query that is not the current one
+                random_query_id = random.choice(queries)
+                
+                if random_query_id == query_id:
+                    continue
+    
+                # Get the documents of the random query
+                random_query_docs = self.response_dict[random_query_id]
+
+                # Pick one random document from the random query
+                for doc_id, score in random_query_docs.items():
+                    if doc_id not in top_k_doc_ids and doc_id not in {doc[0] for doc in random_docs}:
+                        random_docs.append((doc_id, score))
+                        break
+
+                attempts += 1
+
             result_dict[query_id] = top_k + random_docs
 
         return result_dict
+
 
     def golden_context_sampling(self, k):
         """
