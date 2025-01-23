@@ -405,13 +405,14 @@ if __name__ == "__main__":
         help="Flag to be verbose in logging intermediate results.",
     )
     args_parser.add_argument(
-        "-a" "--not_adore",
+        "-a",
+        "--adore",
         action="store_false",
         required=False,
         help="If ADORE is used as a retriever.",
     )
     args = args_parser.parse_args()
-
+    args.not_adore = not args.adore
     # Input validation of the provided arguments
     if args.k < 1:
         raise ValueError(
@@ -423,7 +424,7 @@ if __name__ == "__main__":
         raise FileNotFoundError(
             f"The provided retrieval results file '{args.retrieval_results_file}' does not exist."
         )
-
+    
     # Actually perform the evaluation using the provided arguments
     perform_evaluation(
         sampling_method=SamplingMethod(args.sampling_method),
