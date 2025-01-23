@@ -9,7 +9,7 @@ from typing import Optional
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from dto.query import Document, Query, QueryContext
+from dto.query import Document, Query, QueryContext, SupportingFacts
 from evaluation.llama_engine import LlamaEngine
 from sampling.sampling_generator import SamplingGenerator
 
@@ -113,7 +113,7 @@ class EvalPipeline:
         """
         For each query, the LLM is called to answer the query's prompt.
         """
-
+        print("EVAL")
         prompt_type = "document"
         if self.golden_eval:
             prompt_type = "context"
@@ -271,19 +271,23 @@ def find_hard_negatives(queries, k):
 
     for query in queries:
         scores = []
+        facts = [s.name for s in query.supporting_facts]
         for neg in query.documents[k:]:
             sum_score = 0
             for c in query.query_context:
-                negative_doc_text = f"{neg.title} {neg.text}"
-                ground_truth_doc = f"{c.name} {c.context}"
-                neg_embedding = model.encode(negative_doc_text, convert_to_tensor=False)
-                context_embedding = model.encode(
-                    ground_truth_doc, convert_to_tensor=False
-                )
-                similarity_score = cosine_similarity(
-                    [neg_embedding], [context_embedding]
-                )[0][0]
-                sum_score += similarity_score
+                if c.name in facts:
+                    negative_doc_text = f"{neg.title} {neg.text}"
+                    ground_truth_doc = f"{c.name} {c.context}"
+                    neg_embedding = model.encode(
+                        negative_doc_text, convert_to_tensor=False
+                    )
+                    context_embedding = model.encode(
+                        ground_truth_doc, convert_to_tensor=False
+                    )
+                    similarity_score = cosine_similarity(
+                        [neg_embedding], [context_embedding]
+                    )[0][0]
+                    sum_score += similarity_score
             avg_score = sum_score / len(query.query_context)
             scores.append(avg_score)
         indexed_scores = list(enumerate(scores))
@@ -338,12 +342,17 @@ def find_query_by_id(data, query_id: str):
                 QueryContext(name=item[0], context=item[1])
                 for item in sub_json.get("context")
             ]
+            query_facts = [
+                SupportingFacts(name=item[0])
+                for item in sub_json.get("supporting_facts")
+            ]
             return Query(
                 query_id,
                 sub_json.get("answer"),
                 sub_json.get("type"),
                 sub_json.get("question"),
                 query_contexts,
+                query_facts,
             )
 
     logging.info(f"Found zero matching query with id: {query_id}")

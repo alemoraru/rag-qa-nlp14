@@ -136,22 +136,15 @@ class SamplingGenerator:
 
             context = sub_json.get("context")
             question = sub_json.get("question")
-            answer = sub_json.get("answer")
-            query_contexts = [
-                QueryContext(name=item[0], context=item[1]) for item in context
-            ]
-
-            document_texts = [f"{doc.name} {doc.context}" for doc in query_contexts]
-            query_embedding = model.encode(answer, convert_to_tensor=False)
-            document_embeddings = model.encode(document_texts, convert_to_tensor=False)
-
-            # Compute cosine similarity between the query and each document
-            similarity_scores = cosine_similarity(
-                [query_embedding], document_embeddings
-            )[0]
-
-            top_k_indices = np.argsort(similarity_scores)[::-1][:k]
-            top_k_documents = [query_contexts[i] for i in top_k_indices]
+            supporting_facts = sub_json.get("supporting_facts")
+            # Extract titles from supporting facts
+            supporting_facts = [item[0] for item in supporting_facts]
+            query_contexts = []
+            for item in context:
+                if item[0] not in supporting_facts:
+                    continue
+                print(f"Found for item: {item[0]}")
+                query_contexts.append(QueryContext(name=item[0], context=item[1]))
 
             queries_with_k_context.append(
                 Query(
@@ -159,7 +152,7 @@ class SamplingGenerator:
                     sub_json.get("answer"),
                     sub_json.get("type"),
                     question,
-                    top_k_documents,
+                    query_contexts,
                 )
             )
 

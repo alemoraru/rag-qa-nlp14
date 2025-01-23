@@ -35,6 +35,16 @@ class QueryContext:
         print(f"QueryContext(name={self.name}, context={self.context})")
 
 
+class SupportingFacts:
+    """
+    Class to represent Golden docs object.
+    A query context contains its unique name.
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+
 class Query:
     """
     Class to represent a Query object.
@@ -43,7 +53,13 @@ class Query:
     """
 
     def __init__(
-        self, query_id: str, answer: str, type: str, question: str, contexts=None
+        self,
+        query_id: str,
+        answer: str,
+        type: str,
+        question: str,
+        contexts=None,
+        supporting_facts=None,
     ):
         if contexts is None:
             contexts = []
@@ -53,6 +69,7 @@ class Query:
         self.question = question
         self.documents = []
         self.query_context = contexts
+        self.supporting_facts = supporting_facts
         self.result = ""  # here comes the answer of the llm to this query
 
     def add_document(self, document: Document):
@@ -62,6 +79,10 @@ class Query:
     def add_context(self, context: QueryContext):
         """Method to add a QueryContext object to the list of contexts."""
         self.query_context.append(context)
+
+    def add_supporting_facts(self, context: SupportingFacts):
+        """Method to add a QueryContext object to the list of contexts."""
+        self.supporting_facts.append(context)
 
     def set_result(self, result: str):
         """Method to set the result of the LLM to the query object."""
