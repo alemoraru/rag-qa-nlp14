@@ -167,6 +167,7 @@ def perform_evaluation(
     num_queries: Optional[int] = None,
     retrieval_results_file: str = "responseDict",
     verbose: bool = False,
+    not_adore: bool = False,
 ) -> None:
     """
     Perform evaluation on the RAG QA pipeline using the provided sampling method and K argument.
@@ -190,7 +191,7 @@ def perform_evaluation(
         eval_pipeline.set_golden_eval(golden=True)
 
     sampling_docs = retrieve_sampling(
-        file=retrieval_results_file, sampling=sampling_method, k=k
+        file=retrieval_results_file, sampling=sampling_method, k=k, not_adore=not_adore
     )
 
     if sampling_method != SamplingMethod.GOLDEN:
@@ -228,7 +229,7 @@ def perform_evaluation(
     logging.info(f"Execution time: {end_time - start_time} seconds")
 
 
-def retrieve_sampling(file: str, sampling=SamplingMethod.RELEVANT, k=1):
+def retrieve_sampling(file: str, sampling=SamplingMethod.RELEVANT, k=1, not_adore=True):
     """
     Select top k docs from the retrieved ones.
     The sampling can contain either:
@@ -240,8 +241,7 @@ def retrieve_sampling(file: str, sampling=SamplingMethod.RELEVANT, k=1):
     with open(f"{file}", "r") as file:
         response_dict = json.load(file)
 
-    sampling_generator = SamplingGenerator(response_dict)
-
+    sampling_generator = SamplingGenerator(response_dict, not_adore)
     if sampling == SamplingMethod.RELEVANT:
         return sampling_generator.relevant_sampling(k)
     if sampling == SamplingMethod.NEGATIVE:
@@ -297,7 +297,7 @@ def find_hard_negatives(queries, k):
         for id, _ in lowest_two:
             hard_negatives.append(query.documents[k + id])
         query.documents = query.documents[:k] + hard_negatives
-
+    print(queries)
     return queries
 
 
@@ -412,6 +412,12 @@ if __name__ == "__main__":
         action="store_true",
         required=False,
         help="Flag to be verbose in logging intermediate results.",
+    )
+    args_parser.add_argument(
+        "-a" "--not_adore",
+        action="store_false",
+        required=False,
+        help="If ADORE is used as a retriever.",
     )
     args = args_parser.parse_args()
 

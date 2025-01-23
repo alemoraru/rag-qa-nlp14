@@ -1,3 +1,9 @@
+adore/models/
+
+# !adore/models/adore_model_finetuned
+
+adore/adore_data/
+star_embeddings/
 data/
 venv/
 .venv/
