@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import pickle
-import sys
 from types import SimpleNamespace
 
 import faiss
@@ -13,7 +12,6 @@ from DRhard_utils.adore.inference import evaluate
 from DRhard_utils.model import RobertaDot
 from DRhard_utils.retrieve_utils import (
     construct_flatindex_from_embeddings,
-    convert_index_to_gpu,
     index_retrieve,
 )
 from tqdm import tqdm

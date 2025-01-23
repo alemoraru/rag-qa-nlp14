@@ -3,9 +3,10 @@ import os
 import random
 
 import numpy as np
-from dto.query import Query, QueryContext
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+
+from dto.query import Query, QueryContext
 
 
 class SamplingGenerator:
@@ -74,7 +75,9 @@ class SamplingGenerator:
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
             sorted_top_docs = dict(
-                sorted(top_docs.items(), key=lambda item: item[1], reverse=self.not_adore)
+                sorted(
+                    top_docs.items(), key=lambda item: item[1], reverse=self.not_adore
+                )
             )
 
             # Get the first k docs

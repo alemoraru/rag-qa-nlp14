@@ -6,11 +6,12 @@ import time
 from enum import Enum
 from typing import Optional
 
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
 from dto.query import Document, Query, QueryContext, SupportingFacts
 from evaluation.llama_engine import LlamaEngine
 from sampling.sampling_generator import SamplingGenerator
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
 
 # Set up logging
 logging.basicConfig(
@@ -112,7 +113,6 @@ class EvalPipeline:
         """
         For each query, the LLM is called to answer the query's prompt.
         """
-        print("EVAL")
         prompt_type = "document"
         if self.golden_eval:
             prompt_type = "context"
@@ -121,8 +121,7 @@ class EvalPipeline:
             prompt, documents = self.create_prompt(query, prompt_type)
             llm_answer = self.llm_instance.get_llama_completion(
                 user_prompt=prompt, documents=documents
-            )  
-            print(llm_answer)
+            )
             # print(f"Answer {self.extract_correct_answer(llm_answer)}")
             query.set_result(self.extract_correct_answer(llm_answer))
 
@@ -297,7 +296,7 @@ def find_hard_negatives(queries, k):
         for id, _ in lowest_two:
             hard_negatives.append(query.documents[k + id])
         query.documents = query.documents[:k] + hard_negatives
-    print(queries)
+    # print(queries)
     return queries
 
 
@@ -433,7 +432,7 @@ if __name__ == "__main__":
         raise FileNotFoundError(
             f"The provided retrieval results file '{args.retrieval_results_file}' does not exist."
         )
-    
+
     # Actually perform the evaluation using the provided arguments
     perform_evaluation(
         sampling_method=SamplingMethod(args.sampling_method),
