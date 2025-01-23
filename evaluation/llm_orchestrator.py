@@ -122,7 +122,8 @@ class EvalPipeline:
             prompt, documents = self.create_prompt(query, prompt_type)
             llm_answer = self.llm_instance.get_llama_completion(
                 user_prompt=prompt, documents=documents
-            )
+            )  
+            print(llm_answer)
             # print(f"Answer {self.extract_correct_answer(llm_answer)}")
             query.set_result(self.extract_correct_answer(llm_answer))
 
