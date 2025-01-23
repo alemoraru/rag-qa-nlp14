@@ -75,7 +75,9 @@ class SamplingGenerator:
         for query_id, top_docs in self.response_dict.items():
             # Sort top_docs by 'cosine similarity' in descending order
             sorted_top_docs = dict(
-                sorted(top_docs.items(), key=lambda item: item[1], reverse=True)
+                sorted(
+                    top_docs.items(), key=lambda item: item[1], reverse=self.not_adore
+                )
             )
 
             # Get the first k docs

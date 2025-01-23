@@ -113,7 +113,6 @@ class EvalPipeline:
         """
         For each query, the LLM is called to answer the query's prompt.
         """
-        print("EVAL")
         prompt_type = "document"
         if self.golden_eval:
             prompt_type = "context"
@@ -297,7 +296,7 @@ def find_hard_negatives(queries, k):
         for id, _ in lowest_two:
             hard_negatives.append(query.documents[k + id])
         query.documents = query.documents[:k] + hard_negatives
-    print(queries)
+    # print(queries)
     return queries
 
 
@@ -414,13 +413,14 @@ if __name__ == "__main__":
         help="Flag to be verbose in logging intermediate results.",
     )
     args_parser.add_argument(
-        "-a" "--not_adore",
+        "-a",
+        "--adore",
         action="store_false",
         required=False,
         help="If ADORE is used as a retriever.",
     )
     args = args_parser.parse_args()
-
+    args.not_adore = not args.adore
     # Input validation of the provided arguments
     if args.k < 1:
         raise ValueError(
