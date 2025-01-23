@@ -3,10 +3,9 @@ import os
 import random
 
 import numpy as np
+from dto.query import Query, QueryContext
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-
-from dto.query import Query, QueryContext
 
 
 class SamplingGenerator:

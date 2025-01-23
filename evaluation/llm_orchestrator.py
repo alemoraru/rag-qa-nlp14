@@ -6,12 +6,11 @@ import time
 from enum import Enum
 from typing import Optional
 
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-
 from dto.query import Document, Query, QueryContext, SupportingFacts
 from evaluation.llama_engine import LlamaEngine
 from sampling.sampling_generator import SamplingGenerator
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Set up logging
 logging.basicConfig(
