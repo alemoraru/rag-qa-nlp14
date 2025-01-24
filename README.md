@@ -37,16 +37,18 @@ Master's course at TU Delft.
 
 1. **Download the pretrained models**
 
-- Create a folder named ```models``` within the ```adore``` directory. 
-- Download the correpsonding files for the pre-trained models for passages from ```https://github.com/jingtaozhan/DRhard``` and place them in the following paths:
+- Create a folder named ```models``` within the ```adore``` directory.
+- Download the correpsonding files for the pre-trained models for passages from
+  ```https://github.com/jingtaozhan/DRhard``` and place them in the following paths:
 
     ```
     models/star_model
     models/adore_model
     ```
+
 2. **Preprocess the data**
 
-    a) Preprocess the corpus and queries for each data split (```DEV```, ```TRAIN```).
+   a) Preprocess the corpus and queries for each data split (```DEV```, ```TRAIN```).
     ```
     cd adore
     python preprocess.py
@@ -55,7 +57,6 @@ Master's course at TU Delft.
         - Reads the raw corpus and queries from the specified dataset path.
         - Applies preprocessing steps (ID conversion, cleaning).
         - Outputs the formatted `.tsv` files and the `qrels` file.
-
 
     b) Preprocess the data further by tokenizing.
 
@@ -73,7 +74,8 @@ Master's course at TU Delft.
 
 3. **Document embeddings**
 
-    Embeddings are precomputed using the STAR model and required for the ADORE retriever (in case of both training and inference).
+   Embeddings are precomputed using the STAR model and required for the ADORE retriever (in case of both training and
+   inference).
 
     ```
     cd /path/to/project/adore/DRhard_utils
@@ -83,16 +85,17 @@ Master's course at TU Delft.
 
 4. **Finetune ADORE**
 
-    Start from the pretrained weights and finetune the ADORE model.
+   Start from the pretrained weights and finetune the ADORE model.
 
     ```
     python adore/train.py --init_path ../models/adore_model --pembed_path ../star_embeddings/passages.memmap --model_save_dir ../models/adore_model_finetuned --log_dir ../models/log --preprocess_dir ../adore_data/passage/preprocess
     ```
- 
+
 
 5. **Inference**
 
-    In order to run inference on the seleceted data split, document embeddings have to be computed as described in step 3.
+   In order to run inference on the seleceted data split, document embeddings have to be computed as described in step
+   3.
     ```
     cd /path/to/project/adore
 
@@ -107,18 +110,15 @@ Master's course at TU Delft.
     python DRhard_utils/msmarco_eval.py adore_data/passage/preprocess/dev-qrel.tsv adore_data/passage/evaluate/dev.rank.tsv 15                                              
     ```
 
-
-
 ## ADORE as Retrieval Module
 
 In order to retrieve relevant passages and map qids/pids back to the original ones, run the inference pipeline of ADORE:
+
 ```
 cd /path/to/project/adore
 
 python adore_inference_pipeline.py                                            
 ```
-
-
 
 ## Hugging Face Token 🔑
 
@@ -127,10 +127,11 @@ python adore_inference_pipeline.py
     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
     ```
 
-> **Note**: Should you encounter any issues with the token, you can generate a new one from
+> **Note**: You will need to generate a new token from
 > the [Hugging Face website](https://huggingface.co/docs/hub/en/security-tokens). Note that this is not sufficient,
 > as you also need explicit access that is granted to the model. You can find this model
-> under [meta-llama/Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B).
+> under [meta-llama/Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B). By the time this repository is made
+> public, the token will have been revoked, as we used this token only for evaluation purposes within the course.
 
 ## Modifications ✏️
 
@@ -158,7 +159,7 @@ The `llm_orchestrator` is parametrized, meaning you can tweak the following para
 only for
 debugging purposes to evaluate a smaller subset of queries.
 --retrieval_results_file, -f: The file containing the retrieval results. Not required to be set, defaults to the
-                              responseDict.json file found in the root directory of this repository.
+responseDict.json file found in the root directory of this repository.
 --verbose, -v: Whether to print verbose output. Not required to be set, defaults to False.
 ```
 
